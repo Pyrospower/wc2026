@@ -9,10 +9,17 @@ app = Flask(__name__)
 GITHUB_BASE = "https://raw.githubusercontent.com/baburu/wc2026/refs/heads/main/cards/cropped"
 BG_URL = f"{GITHUB_BASE}/01.png"
 
+# In-memory image cache
+_image_cache = {}
+
 def fetch_image(url):
-    resp = requests.get(url, timeout=10)
+    if url in _image_cache:
+        return _image_cache[url].copy()
+    resp = requests.get(url, timeout=15)
     resp.raise_for_status()
-    return Image.open(io.BytesIO(resp.content)).convert("RGBA")
+    img = Image.open(io.BytesIO(resp.content)).convert("RGBA")
+    _image_cache[url] = img
+    return img.copy()
 
 def get_font(size):
     font_paths = [
@@ -56,22 +63,30 @@ def card():
 
     cx = 200
 
-    # Beige username (matches card background)
-    draw.text((cx, 505), username, font=font_name, fill=(242, 235, 213, 255), anchor="mm")
-
-    # Burgundy score (matches card border)
-    draw.text((cx, 555), f"SCORE: {score} PTS", font=font_score, fill=(100, 20, 40, 255), anchor="mm")
+    draw.text((cx, 518), username,              font=font_name,  fill=(242, 235, 213, 255), anchor="mm")
+    draw.text((cx, 550), f"SCORE: {score} PTS", font=font_score, fill=(100, 20, 40, 255),   anchor="mm")
 
     out = io.BytesIO()
     card_img.convert("RGB").save(out, format="PNG", optimize=True)
     out.seek(0)
     return send_file(out, mimetype="image/png")
 
-@app.route("/debug")
-def debug():
-    import subprocess
-    result = subprocess.run(["fc-list"], capture_output=True, text=True)
-    return f"<pre>{result.stdout}</pre>"
+@app.route("/warmup")
+def warmup():
+    """Pre-cache all avatars — call this once after deploy"""
+    errors = []
+    try:
+        fetch_image(BG_URL)
+    except Exception as e:
+        errors.append(f"bg: {e}")
+    for i in range(2, 32):
+        try:
+            fetch_image(f"{GITHUB_BASE}/{i:02d}.png")
+        except Exception as e:
+            errors.append(f"avatar {i}: {e}")
+    if errors:
+        return f"Done with errors: {errors}"
+    return "✅ All 31 images cached!"
 
 @app.route("/")
 def index():
