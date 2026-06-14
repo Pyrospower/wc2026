@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: discord-leaderboard
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SHEET_CSV_URL
+        sync: false
+      - key: DISCORD_WEBHOOK_URL
+        sync: false
