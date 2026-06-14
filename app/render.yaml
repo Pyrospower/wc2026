@@ -2,6 +2,6 @@ services:
   - type: web
     name: wc2026-cards
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: apt-get install -y fonts-dejavu-core && pip install -r requirements.txt
     startCommand: gunicorn app:app
     plan: free

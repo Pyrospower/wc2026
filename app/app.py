@@ -9,33 +9,22 @@ app = Flask(__name__)
 GITHUB_BASE = "https://raw.githubusercontent.com/baburu/wc2026/refs/heads/main/cards/cropped"
 BG_URL = f"{GITHUB_BASE}/01.png"
 
-FONT_PATH = "/tmp/font_bold.ttf"
-FONT_URL  = "https://github.com/google/fonts/raw/main/apache/roboto/Roboto%5Bwdth%2Cwght%5D.ttf"
-
-def ensure_font():
-    if not os.path.exists(FONT_PATH):
-        r = requests.get(FONT_URL, timeout=15)
-        r.raise_for_status()
-        with open(FONT_PATH, "wb") as f:
-            f.write(r.content)
-
 def fetch_image(url):
     resp = requests.get(url, timeout=10)
     resp.raise_for_status()
     return Image.open(io.BytesIO(resp.content)).convert("RGBA")
 
 def get_font(size):
-    ensure_font()
-    try:
-        return ImageFont.truetype(FONT_PATH, size)
-    except Exception:
-        for path in [
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-        ]:
-            if os.path.exists(path):
-                return ImageFont.truetype(path, size)
-        return ImageFont.load_default()
+    font_paths = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+        "/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf",
+    ]
+    for path in font_paths:
+        if os.path.exists(path):
+            return ImageFont.truetype(path, size)
+    return ImageFont.load_default(size=size)
 
 @app.route("/card")
 def card():
@@ -62,33 +51,25 @@ def card():
 
     draw = ImageDraw.Draw(card_img)
 
-    font_name  = get_font(28)  # large bold for username
-    font_score = get_font(16)  # smaller for score
+    font_name  = get_font(28)
+    font_score = get_font(16)
 
-    cx = 200  # horizontal center
+    cx = 200
 
-    # Username — large, white, centered at ~y=520 (inside dark bar, top line)
-    draw.text(
-        (cx, 518),
-        username,
-        font=font_name,
-        fill=(255, 255, 255, 255),
-        anchor="mm"
-    )
-
-    # Score — smaller, white, centered below
-    draw.text(
-        (cx, 548),
-        f"SCORE: {score} PTS",
-        font=font_score,
-        fill=(255, 255, 255, 255),
-        anchor="mm"
-    )
+    draw.text((cx, 518), username,            font=font_name,  fill=(255, 255, 255, 255), anchor="mm")
+    draw.text((cx, 548), f"SCORE: {score} PTS", font=font_score, fill=(255, 255, 255, 255), anchor="mm")
 
     out = io.BytesIO()
     card_img.convert("RGB").save(out, format="PNG", optimize=True)
     out.seek(0)
     return send_file(out, mimetype="image/png")
+
+@app.route("/debug")
+def debug():
+    """Check which fonts are available on this system"""
+    import subprocess
+    result = subprocess.run(["fc-list"], capture_output=True, text=True)
+    return f"<pre>{result.stdout}</pre>"
 
 @app.route("/")
 def index():
