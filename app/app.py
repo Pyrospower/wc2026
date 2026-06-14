@@ -9,7 +9,6 @@ app = Flask(__name__)
 GITHUB_BASE = "https://raw.githubusercontent.com/baburu/wc2026/refs/heads/main/cards/cropped"
 BG_URL = f"{GITHUB_BASE}/01.png"
 
-# In-memory image cache
 _image_cache = {}
 
 def fetch_image(url):
@@ -53,8 +52,13 @@ def card():
         abort(502, f"Could not fetch images: {e}")
 
     card_img = Image.new("RGBA", (400, 600), (0, 0, 0, 0))
-    card_img.paste(bg,     (0, 0))
+    # 1. paste background
+    card_img.paste(bg, (0, 0))
+    # 2. paste avatar on top
     card_img.paste(avatar, (0, 0), avatar)
+    # 3. re-paste the bottom bar from background so avatar never bleeds into text area
+    bar_region = bg.crop((0, 500, 400, 600))
+    card_img.paste(bar_region, (0, 500))
 
     draw = ImageDraw.Draw(card_img)
 
@@ -73,7 +77,6 @@ def card():
 
 @app.route("/warmup")
 def warmup():
-    """Pre-cache all avatars — call this once after deploy"""
     errors = []
     try:
         fetch_image(BG_URL)
