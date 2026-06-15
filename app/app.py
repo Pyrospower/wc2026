@@ -13,7 +13,7 @@ LEADERBOARD_URL = "https://wc2026-leaderboard.onrender.com/preview"
 # Discord username (lowercase) -> Sheet name
 NAME_MAP = {
     "baburubaburu": "Babu",
-    "hotaru":       "Hotarou",
+    "hotarou":      "Hotarou",
     "ziggsawpuzzle":"Ziggs",
     "trel":         "Trel",
     "scorpy":       "Scorpy",
