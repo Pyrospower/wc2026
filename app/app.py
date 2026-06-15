@@ -23,7 +23,7 @@ NAME_MAP = {
     "squally":      "Squally",
     "hypetrain":    "Hype",
     "sunnyrainlight":"Sunny",
-    "d4_akumah":    "D4",
+    "akuma5336": "D4",
     "nyte_zero":    "Nyte",
 }
 
