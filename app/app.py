@@ -14,7 +14,7 @@ LEADERBOARD_URL = "https://wc2026-leaderboard.onrender.com/preview"
 NAME_MAP = {
     "baburubaburu": "Babu",
     "houtarou": "Hotarou",
-    "ziggsawpuzzle":"Ziggs",
+    "ziggssawpuzzle":"Ziggs",
     "trel":         "Trel",
     "scorpy":       "Scorpy",
     "pyrospower":   "Pyro",
