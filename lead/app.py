@@ -10,7 +10,17 @@ SHEET_CSV_URL = os.environ.get("SHEET_CSV_URL")
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 
 
-def fetch_leaderboard():
+# Column layout for each leaderboard, as (name_col_index, score_col_index), 0-based.
+# B=1, C=2 / E=4, F=5 / H=7, I=8 / K=10, L=11
+LEADERBOARDS = {
+    "lead": {"name_col": 1, "score_col": 2, "title": "GENERAL CLASSIFICATION"},
+    "m1": {"name_col": 4, "score_col": 5, "title": "MATCHDAY 1"},
+    "m2": {"name_col": 7, "score_col": 8, "title": "MATCHDAY 2"},
+    "m3": {"name_col": 10, "score_col": 11, "title": "MATCHDAY 3"},
+}
+
+
+def fetch_leaderboard(name_col, score_col):
     response = requests.get(SHEET_CSV_URL, timeout=10)
     response.raise_for_status()
 
@@ -18,11 +28,11 @@ def fetch_leaderboard():
     players = []
 
     for row in reader:
-        # Skip empty rows or rows without both columns
-        if len(row) < 3:
+        # Skip rows that don't have enough columns for this leaderboard
+        if len(row) <= score_col:
             continue
-        name = row[1].strip()
-        score_raw = row[2].strip()
+        name = row[name_col].strip()
+        score_raw = row[score_col].strip()
 
         # Skip header or non-numeric scores
         if not name or not score_raw.lstrip("-").isdigit():
@@ -35,7 +45,7 @@ def fetch_leaderboard():
     return players
 
 
-def build_embed(players):
+def build_embed(players, subtitle):
     lines = ["▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"]
 
     for rank, (name, score) in enumerate(players, start=1):
@@ -46,7 +56,7 @@ def build_embed(players):
 
     lines.append("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬")
     code_block = "```ansi\n" + "\n".join(lines) + "\n```"
-    description = "🏆 **CURRENT LEADERBOARD** 🏆\n" + code_block
+    description = f"🏆 **{subtitle}** 🏆\n" + code_block
 
     return {
         "embeds": [
@@ -59,31 +69,48 @@ def build_embed(players):
     }
 
 
-def post_to_discord(players):
-    payload = build_embed(players)
+def post_to_discord(players, subtitle):
+    payload = build_embed(players, subtitle)
     response = requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
     response.raise_for_status()
     return response.status_code
 
 
-@app.route("/post", methods=["GET", "POST"])
-def post_leaderboard():
-    try:
-        players = fetch_leaderboard()
-        status = post_to_discord(players)
-        return jsonify({"ok": True, "players": len(players), "discord_status": status})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+def post_route_for(board_key):
+    board = LEADERBOARDS[board_key]
+
+    def handler():
+        try:
+            players = fetch_leaderboard(board["name_col"], board["score_col"])
+            status = post_to_discord(players, board["title"])
+            return jsonify({"ok": True, "players": len(players), "discord_status": status})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    return handler
 
 
-@app.route("/preview", methods=["GET"])
-def preview_leaderboard():
-    """Returns the leaderboard data as JSON without posting to Discord — useful for debugging."""
-    try:
-        players = fetch_leaderboard()
-        return jsonify({"ok": True, "players": [{"name": n, "score": s} for n, s in players]})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+def preview_route_for(board_key):
+    board = LEADERBOARDS[board_key]
+
+    def handler():
+        try:
+            players = fetch_leaderboard(board["name_col"], board["score_col"])
+            return jsonify({"ok": True, "players": [{"name": n, "score": s} for n, s in players]})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    return handler
+
+
+# /post stays as the route for -lead (General Classification), unchanged from before.
+# /m1, /m2, /m3 are the new commands' routes.
+app.add_url_rule("/post", "post_lead", post_route_for("lead"), methods=["GET", "POST"])
+app.add_url_rule("/preview", "preview_lead", preview_route_for("lead"), methods=["GET"])
+
+for key in ("m1", "m2", "m3"):
+    app.add_url_rule(f"/{key}", f"post_{key}", post_route_for(key), methods=["GET", "POST"])
+    app.add_url_rule(f"/{key}/preview", f"preview_{key}", preview_route_for(key), methods=["GET"])
 
 
 @app.route("/", methods=["GET"])
