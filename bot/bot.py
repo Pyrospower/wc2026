@@ -515,6 +515,22 @@ async def on_message(message):
         except Exception as e:
             await msg.edit(content=f"❌ Error: {e}")
 
+    # ── -m1 / -m2 / -m3 ──
+    elif low in ("-m1", "-m2", "-m3"):
+        key = low[1:]  # strips the "-" → "m1", "m2", "m3"
+        url = LEADERBOARD_URL.replace("/post", f"/{key}")
+        msg = await message.channel.send(f"⏳ Fetching {key.upper()} leaderboard...")
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=60)) as response:
+                    data = await response.json()
+                    if not data.get("ok"):
+                        await msg.edit(content=f"❌ Failed to fetch {key.upper()} leaderboard.")
+                    else:
+                        await msg.delete()
+        except Exception as e:
+            await msg.edit(content=f"❌ Error: {e}")
+
     # ── -match <team> ──
     elif low.startswith("-match "):
         if not API_FOOTBALL_KEY:
