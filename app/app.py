@@ -31,6 +31,7 @@ NAME_MAP = {
     "sunnyrainlight":"Sunny",
     "akuma5336": "D4",
     "nyte_zero":    "Nyte",
+    "xenter0384":   "Pffq",
 }
 
 _image_cache = {}
