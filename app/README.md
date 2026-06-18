@@ -1,4 +1,4 @@
-### ✨ My Collection Gallery ✨
+### ✨ Avatars Gallery ✨
 
 Type on Discord ```-avatar number``` (e.g. ```-avatar 2```) 
 Then type ```-card```
