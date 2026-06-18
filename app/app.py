@@ -16,6 +16,13 @@ BG_NAMES = {
     "m":       "m.png",
 }
 
+# Score text color per background key, matching each card's border/theme color
+SCORE_COLORS = {
+    "default": (100, 20, 40, 255),
+    "gc":      (20, 70, 160, 255),   # blue, matches the gc.png border
+    "m":       (150, 20, 30, 255),   # red, matches the m.png border
+}
+
 # Discord username (lowercase) -> Sheet name
 NAME_MAP = {
     "baburubaburu": "Babu",
@@ -143,8 +150,10 @@ def card():
             card_img.paste(resized, (x, BADGE_Y - bh // 2), resized)
             x += BADGE_SIZE + BADGE_GAP
 
+    score_color = SCORE_COLORS.get(bg_key, SCORE_COLORS["default"])
+
     draw.text((cx, 508), username,              font=font_name,  fill=(242, 235, 213, 255), anchor="mm")
-    draw.text((cx, 554), f"SCORE: {score} PTS", font=font_score, fill=(100, 20, 40, 255),   anchor="mm")
+    draw.text((cx, 554), f"SCORE: {score} PTS", font=font_score, fill=score_color,          anchor="mm")
 
     out = io.BytesIO()
     card_img.convert("RGB").save(out, format="PNG", optimize=True)
