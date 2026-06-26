@@ -1,0 +1,14 @@
+services:
+  - type: worker
+    name: wc2026-bot
+    runtime: python
+    rootDir: bot
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    envVars:
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      - key: LEADERBOARD_URL
+        sync: false
+      - key: API_FOOTBALL_KEY
+        sync: false
