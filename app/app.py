@@ -86,7 +86,7 @@ VALID_BADGES = {"m1", "m2", "m3"}
 BADGE_SIZE   = 100   # size (px) each badge is scaled into on the 400x600 card
 BADGE_GAP    = 14   # gap (px) between badges
 BADGE_LEFT_X = 40   # left margin (px) where the badge row starts
-BADGE_Y      = 410  # vertical center (px) of the badge row
+BADGE_Y      = 390  # vertical center (px) of the badge row
 
 # Safety clamp so a typo'd BADGE_SIZE can't break the card layout
 BADGE_SIZE = max(16, min(BADGE_SIZE, 120))
