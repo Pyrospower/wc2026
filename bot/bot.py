@@ -6,69 +6,61 @@ import discord
 TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 LEADERBOARD_BASE_URL = "https://wc2026-leaderboard.onrender.com"
 
-# TheSportsDB Config (using public developer key '3')
-THE_SPORTSDB_BASE = "https://www.thesportsdb.com/api/v1/json/3"
-WORLD_CUP_ID = "4429"  # TheSportsDB's unique league ID for the FIFA World Cup
+# Football-Data.org Config
+FOOTBALL_DATA_API_KEY = os.environ.get("FOOTBALL_DATA_API_KEY")
+FOOTBALL_DATA_BASE = "https://api.football-data.org/v4"
+COMP_CODE = "WC"  # Competition code for FIFA World Cup
 
 intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
 
 
+def get_fd_headers():
+    return {
+        "X-Auth-Token": FOOTBALL_DATA_API_KEY
+    }
+
+
 # ──────────────────────────────────────────────
-# SHARED: find fixture by team name (TheSportsDB)
+# SHARED: find fixture by team name (Football-Data)
 # ──────────────────────────────────────────────
 async def find_fixture(session, team_name: str):
-    # 1. First, check if there are any live matches happening right now globally
-    async with session.get(f"{THE_SPORTSDB_BASE}/eventsday.php") as r:
+    url = f"{FOOTBALL_DATA_BASE}/competitions/{COMP_CODE}/matches"
+    async with session.get(url, headers=get_fd_headers()) as r:
         if r.status == 200:
             data = await r.json()
-            events = data.get("events", []) or []
+            matches = data.get("matches", []) or []
             
-            match = next(
-                (e for e in events if 
-                 team_name.lower() in e.get("strHomeTeam", "").lower() or 
-                 team_name.lower() in e.get("strAwayTeam", "").lower()), 
-                None
-            )
-            if match:
-                return match
-
-    # 2. If no active live match, look up upcoming/recent World Cup matches
-    async with session.get(f"{THE_SPORTSDB_BASE}/eventsnextleague.php?id={WORLD_CUP_ID}") as r:
-        if r.status == 200:
-            data = await r.json()
-            events = data.get("events", []) or []
-            
-            match = next(
-                (e for e in events if 
-                 team_name.lower() in e.get("strHomeTeam", "").lower() or 
-                 team_name.lower() in e.get("strAwayTeam", "").lower()), 
-                None
-            )
-            if match:
-                return match
+            # Search matches for matching team name
+            for m in matches:
+                home_name = m.get("homeTeam", {}).get("name", "").lower()
+                away_name = m.get("awayTeam", {}).get("name", "").lower()
                 
+                if team_name.lower() in home_name or team_name.lower() in away_name:
+                    # Give preference to live games, but return scheduled ones if none are active
+                    return m
     return None
 
 
-def format_match_line(e) -> str:
-    home = e.get("strHomeTeam", "TBD")
-    away = e.get("strAwayTeam", "TBD")
+def format_match_line(m) -> str:
+    home = m.get("homeTeam", {}).get("name", "TBD")
+    away = m.get("awayTeam", {}).get("name", "TBD")
     
-    home_score = e.get("intHomeScore")
-    away_score = e.get("intAwayScore")
-    status = e.get("strStatus", "")
+    score_data = m.get("score", {}).get("fullTime", {})
+    home_score = score_data.get("home")
+    away_score = score_data.get("away")
+    status = m.get("status", "")
 
-    if home_score is not None and away_score is not None:
-        if status == "FT":
-            return f"🏁 **{home} {home_score} - {away_score} {away}** (FT)"
-        else:
-            return f"🔴 **{home} {home_score} - {away_score} {away}** (Live - {status})"
+    if status in ["IN_PLAY", "PAUSED", "LIVE"]:
+        return f"🔴 **{home} {home_score if home_score is not None else 0} - {away_score if away_score is not None else 0} {away}** (Live)"
+    elif status == "FINISHED":
+        return f"🏁 **{home} {home_score} - {away_score} {away}** (FT)"
     else:
-        date_str = e.get("dateEvent", "")
-        time_str = e.get("strTime", "")
-        return f"⏳ **{home} vs {away}** (Scheduled: {date_str} {time_str})"
+        utc_date = m.get("utcDate", "")
+        # Format the date cleanly if string exists
+        date_display = utc_date.replace("T", " ").replace("Z", " UTC")[:16] if utc_date else "Scheduled"
+        return f"⏳ **{home} vs {away}** (Scheduled: {date_display})"
 
 
 async def fetch_bracket_data():
@@ -179,7 +171,6 @@ async def on_message(message):
         msg = await message.channel.send(f"⏳ Fetching **{board['title']}** details...")
         
         try:
-            # Fetch JSON data from your app's unbanned preview endpoint
             async with aiohttp.ClientSession() as session:
                 async with session.get(f"{LEADERBOARD_BASE_URL}{board['path']}", timeout=10) as response:
                     if response.status != 200:
@@ -196,7 +187,6 @@ async def on_message(message):
                 await msg.edit(content="ℹ️ No player entries found for this category.")
                 return
 
-            # Build the precise ANSI color-coded text block locally
             lines = ["▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"]
             for rank, player in enumerate(players, start=1):
                 rank_str = f"{rank:02d}"
@@ -228,7 +218,11 @@ async def on_message(message):
             await message.channel.send("❌ Usage: `-live <team>` — e.g. `-live France`")
             return
 
-        msg = await message.channel.send(f"⏳ Searching TheSportsDB for fixture with **{team_name}**...")
+        if not FOOTBALL_DATA_API_KEY:
+            await message.channel.send("❌ API configuration missing. `FOOTBALL_DATA_API_KEY` is not set.")
+            return
+
+        msg = await message.channel.send(f"⏳ Searching Football-Data for fixture with **{team_name}**...")
         try:
             async with aiohttp.ClientSession() as session:
                 match = await find_fixture(session, team_name)
@@ -239,6 +233,47 @@ async def on_message(message):
 
             await msg.delete()
             await message.channel.send(format_match_line(match))
+        except Exception as e:
+            await msg.edit(content=f"❌ Error: {e}")
+
+    # ── Standings Command (-standings) ──
+    elif content == "-standings":
+        if not FOOTBALL_DATA_API_KEY:
+            await message.channel.send("❌ API configuration missing. `FOOTBALL_DATA_API_KEY` is not set.")
+            return
+
+        msg = await message.channel.send("⏳ Fetching tournament standings...")
+        try:
+            url = f"{FOOTBALL_DATA_BASE}/competitions/{COMP_CODE}/standings"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=get_fd_headers()) as r:
+                    if r.status != 200:
+                        await msg.edit(content=f"❌ Error fetching standings tables (Status: {r.status})")
+                        return
+                    data = await r.json()
+            
+            standings_list = data.get("standings", [])
+            if not standings_list:
+                await msg.edit(content="ℹ️ No standings tables available yet.")
+                return
+            
+            await msg.delete()
+            # Send the first few group tables cleanly to stay under Discord limits
+            for group_table in standings_list[:4]:
+                group_name = group_table.get("group", "Group Stage").replace("_", " ")
+                embed = discord.Embed(title=f"📊 {group_name}", color=discord.Color.green())
+                
+                table_text = ""
+                for pos in group_table.get("table", []):
+                    t_name = pos["team"]["name"]
+                    rank = pos["position"]
+                    pts = pos["points"]
+                    played = pos["playedGames"]
+                    gd = pos["goalDifference"]
+                    table_text += f"`{rank}.` **{t_name}** | P: {played} | GD: {gd} | **Pts: {pts}**\n"
+                
+                embed.description = table_text
+                await message.channel.send(embed=embed)
         except Exception as e:
             await msg.edit(content=f"❌ Error: {e}")
 
@@ -264,7 +299,7 @@ async def on_message(message):
     elif low.startswith("-bracket "):
         round_filter = content[9:].strip()
         if not round_filter:
-            await message.channel.send("❌ Usage: `-bracket <round>` — e.g. `-bracket Round of 32` or `-bracket Round of 16`")
+            await message.channel.send("❌ Usage: `-bracket <round>` — e.g. `-bracket Round of 32`")
             return
         msg = await message.channel.send(f"⏳ Fetching bracket data for round **{round_filter}**...")
         try:
