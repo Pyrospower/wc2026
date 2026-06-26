@@ -91,7 +91,7 @@ def get_font(size):
             return ImageFont.truetype(path, size)
     return ImageFont.load_default(size=size)
 
-VALID_BADGES = {"m1", "m2", "m3"}
+VALID_BADGES = {"m1", "m2", "m3", "wc26"}
 
 # --- Badge layout config: edit these to resize/reposition the badge row ---
 BADGE_SIZE   = 100   # size (px) each badge is scaled into on the 400x600 card
@@ -118,7 +118,8 @@ def card():
     score    = fetch_score(username)
     raw_badges = request.args.get("badge", "")
     badges = [b.strip().lower() for b in raw_badges.split(",") if b.strip()]
-    badges = [b for b in badges if b in VALID_BADGES]
+    badges = [b for b in badges if b in VALID_BADGES and b != "wc26"]
+    badges = ["wc26"] + badges  # wc26 always first, regardless of query param
     username = username.upper()
 
     # Background: pick from BG_NAMES, fall back to default
