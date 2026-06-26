@@ -95,7 +95,7 @@ VALID_BADGES = {"m1", "m2", "m3", "wc26"}
 
 # --- Badge layout config: edit these to resize/reposition the badge row ---
 BADGE_SIZE   = 100   # size (px) each badge is scaled into on the 400x600 card
-BADGE_GAP    = 14   # gap (px) between badges
+BADGE_GAP    = 5   # gap (px) between badges
 BADGE_LEFT_X = 30   # left margin (px) where the badge row starts
 BADGE_Y      = 415  # vertical center (px) of the badge row
 
