@@ -3,6 +3,7 @@ from PIL import Image, ImageDraw, ImageFont
 import requests
 import io
 import os
+import time
 
 app = Flask(__name__)
 
@@ -44,7 +45,17 @@ NAME_MAP = {
 _image_cache = {}
 _score_cache = {}
 
+# Auto-expire the image cache after this many seconds so badge/avatar/bg
+# updates pushed to GitHub show up automatically without a manual clear.
+CACHE_TTL_SECONDS = 300  # 5 minutes
+_cache_last_cleared = time.time()
+
 def fetch_image(url):
+    global _cache_last_cleared
+    if time.time() - _cache_last_cleared > CACHE_TTL_SECONDS:
+        _image_cache.clear()
+        _cache_last_cleared = time.time()
+
     if url in _image_cache:
         return _image_cache[url].copy()
     resp = requests.get(url, timeout=15)
@@ -159,6 +170,14 @@ def card():
     card_img.convert("RGB").save(out, format="PNG", optimize=True)
     out.seek(0)
     return send_file(out, mimetype="image/png")
+
+@app.route("/clear-cache")
+def clear_cache():
+    global _cache_last_cleared
+    _image_cache.clear()
+    _score_cache.clear()
+    _cache_last_cleared = time.time()
+    return "✅ Image cache cleared!"
 
 @app.route("/warmup")
 def warmup():
