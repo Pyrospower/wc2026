@@ -28,7 +28,7 @@ const PLAYER_INFO = {
   'Pyro':    { avatar: 12, user: 'pyrospower' },
   'Edna':    { avatar: 26, user: 'edna_san' },
   'BimBim':  { avatar: 21, user: 'bimbastic' },
-  'Squally': { font: 'Oswald', avatar: 11, user: 'squallyy' },
+  'Squally': { avatar: 11, user: 'squallyy' },
   'Hype':    { avatar: 18, user: 'hypetrain' },
   'Sunny':   { avatar: 21, user: 'sunnyrainlight' },
   'D4':      { avatar: 14, user: 'akuma5336' },
@@ -380,11 +380,11 @@ async function loadPredictions() {
 
     // 🔍 Dynamic Column Mapper:
     // Safely maps each player name to their exact column index in the sheet
-    const playerColumns = [];
+    const players = [];
     for (let c = 0; c < headerRow.length; c++) {
       const val = headerRow[c] ? headerRow[c].trim() : '';
       if (PLAYER_INFO[val]) {
-        playerColumns.push({ name: val, colIndex: c });
+        players.push({ name: val, colIndex: c });
       }
     }
 
@@ -420,7 +420,7 @@ async function loadPredictions() {
               <div class="predictions-flex-table">
                 <div class="pred-header">
                   <div class="cell-match-info">Match</div>
-                  ${playerColumns.map(p => `<div class="cell-player-header">${escHtml(p.name)}</div>`).join('')}
+                  ${players.map(p => `<div class="cell-player-header">${escHtml(p.name)}</div>`).join('')}
                 </div>
                 <div class="pred-body">`;
 
@@ -437,8 +437,8 @@ async function loadPredictions() {
                    </div>`;
 
         // Render player prediction values using their dynamically mapped columns
-        for (let i = 0; i < playerColumns.length; i++) {
-          const colIdx = playerColumns[i].colIndex;
+        for (let i = 0; i < players.length; i++) {
+          const colIdx = players[i].colIndex;
           const pred = row[colIdx] ? row[colIdx].trim().toUpperCase() : '';
           let predClass = '';
           
