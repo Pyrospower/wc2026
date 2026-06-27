@@ -324,8 +324,14 @@ async def on_message(message):
             match_id = found.get("id")
             async with aiohttp.ClientSession() as session:
                 detail = await hl_get(session, f"/matches/{match_id}", {})
-            if detail and detail.get("data"):
-                found = detail["data"]
+            if isinstance(detail, dict) and detail.get("data"):
+                detail_data = detail["data"]
+                if isinstance(detail_data, list) and detail_data:
+                    found = detail_data[0]
+                elif isinstance(detail_data, dict):
+                    found = detail_data
+            elif isinstance(detail, list) and detail:
+                found = detail[0]
             embed = format_match_embed(found)
             await msg.delete()
             await message.channel.send(embed=embed)
