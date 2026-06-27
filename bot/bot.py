@@ -564,20 +564,47 @@ async def on_message(message):
             return
 
         round_label = ROUND_MAP[arg]
+        # Keywords to match against each match's own "round" field — more forgiving
+        # than relying on the API's exact internal round-naming convention.
+        ROUND_KEYWORDS = {
+            "r32":   ["round of 32", "32"],
+            "r16":   ["round of 16", "16"],
+            "qf":    ["quarter"],
+            "sf":    ["semi"],
+            "final": ["final"],
+            "3rd":   ["third", "3rd"],
+        }
         msg = await message.channel.send(f"⏳ Fetching **{round_label}** matches...")
         try:
             async with aiohttp.ClientSession() as session:
                 data = await hl_get(session, "/matches", {
                     "leagueId": WC_LEAGUE_ID,
-                    "round": round_label,
                     "season": 2026,
-                    "limit": 20,
+                    "limit": 100,
                 })
-            if not data or not data.get("data"):
+            all_matches = (data.get("data") if isinstance(data, dict) else data) or []
+            if not all_matches:
+                await msg.edit(content=f"ℹ️ No World Cup matches found yet — check back when the tournament begins!")
+                return
+
+            keywords = ROUND_KEYWORDS.get(arg, [round_label.lower()])
+
+            def round_matches(m):
+                r = m.get("round", "")
+                if isinstance(r, dict):
+                    r = safe_name(r)
+                r = (r or "").lower()
+                # "final" must not also match "semi-final" or "quarter-final"
+                if arg == "final":
+                    return "final" in r and "semi" not in r and "quarter" not in r
+                return any(k in r for k in keywords)
+
+            matches = [m for m in all_matches if round_matches(m)]
+
+            if not matches:
                 await msg.edit(content=f"ℹ️ No matches found for **{round_label}** yet — check back when the knockout stage begins!")
                 return
 
-            matches = data["data"]
             embed = discord.Embed(
                 title=f"🏆 {round_label}",
                 color=ROUND_COLORS.get(arg, 0x1a3a2a)
