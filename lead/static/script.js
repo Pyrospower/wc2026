@@ -129,9 +129,9 @@ function showCard(name) {
       <span class="stat-value" id="stat-val-node">${escHtml(rateValue)}</span>
     </div>
   `;
-  panel.appendChild(innerLayout);
 
   const visibleClone = imgEl.cloneNode(true);
+  panel.appendChild(innerLayout); // Fixed: Appends layout wrapper
   panel.querySelector('.card-img-holder').appendChild(visibleClone);
 
   document.querySelectorAll('.player-row').forEach(row => {
@@ -321,12 +321,18 @@ const btnStandings = document.getElementById('btn-standings');
 const btnPredictions = document.getElementById('btn-predictions');
 const viewStandings = document.getElementById('view-standings');
 const viewPredictions = document.getElementById('view-predictions');
+const cardPanel = document.getElementById('card-panel');
+const contentWrap = document.querySelector('.content-wrap');
 
 btnStandings.addEventListener('click', () => {
   btnStandings.classList.add('active');
   btnPredictions.classList.remove('active');
   viewStandings.style.display = 'block';
   viewPredictions.style.display = 'none';
+
+  // Show the card panel and return container back to the regular width
+  cardPanel.style.display = 'block';
+  contentWrap.classList.remove('wide-layout');
 });
 
 btnPredictions.addEventListener('click', () => {
@@ -334,6 +340,11 @@ btnPredictions.addEventListener('click', () => {
   btnStandings.classList.remove('active');
   viewStandings.style.display = 'none';
   viewPredictions.style.display = 'block';
+
+  // Hide the card panel and widen the container to let columns fit comfortably
+  cardPanel.style.display = 'none';
+  contentWrap.classList.add('wide-layout');
+  
   loadPredictions();
 });
 
@@ -349,39 +360,76 @@ async function loadPredictions() {
     const rows = csvText.split(/\r?\n/).map(row => row.split(','));
     if (rows.length < 3) throw new Error("Spreadsheet contains empty data");
 
-    // Dynamic Header parser: Grabs players directly from Row 2 of the sheet (index 1 in CSV array)
-    const headerRow = rows[1]; 
-    const players = [];
-    for (let c = 4; c <= 17; c++) {
-      if (headerRow[c]) players.push(headerRow[c].trim());
+    // 🔍 Dynamic Header Finder:
+    // Scan the first 10 rows to locate the row containing player names
+    let headerRow = null;
+    let headerRowIdx = -1;
+    for (let r = 0; r < Math.min(rows.length, 10); r++) {
+      const row = rows[r];
+      const hasBabu = row.some(cell => cell && cell.trim() === 'Babu');
+      if (hasBabu) {
+        headerRow = row;
+        headerRowIdx = r;
+        break;
+      }
+    }
+
+    if (!headerRow) {
+      throw new Error("Could not locate player headers in the spreadsheet");
+    }
+
+    // 🔍 Dynamic Column Mapper:
+    // Safely maps each player name to their exact column index in the sheet
+    const playerColumns = [];
+    for (let c = 0; c < headerRow.length; c++) {
+      const val = headerRow[c] ? headerRow[c].trim() : '';
+      if (PLAYER_INFO[val]) {
+        playerColumns.push({ name: val, colIndex: c });
+      }
     }
 
     // Build responsive flex matrix
-    let html = `<div class="predictions-flex-container">
-                  <div class="predictions-flex-table">
-                    <div class="pred-header">
-                      <div class="cell-match-info">Match</div>
-                      ${players.map(p => `<div class="cell-player-header">${escHtml(p)}</div>`).join('')}
-                    </div>
-                    <div class="pred-body">`;
+    let html = '';
+    let isContainerOpen = false;
 
-    for (let idx = 2; idx < rows.length; idx++) {
+    // Start looping through the rows immediately following the discovered header row
+    for (let idx = headerRowIdx + 1; idx < rows.length; idx++) {
       const row = rows[idx];
-      if (!row || row.length < 5) continue;
+      if (!row || row.length < 3) continue;
 
+      // Column B (index 1) is match number
+      // Column C (index 2) is Team 1
+      // Column D (index 3) is Team 2
       const matchNum = row[1] ? row[1].trim() : '';
       const team1 = row[2] ? row[2].trim() : '';
       const team2 = row[3] ? row[3].trim() : '';
 
-      // Detect visual stages (like "Group Phase", "Round of 32") in merged columns
+      // Detect Phase boundaries dynamically to split into standalone cards
       if (!matchNum && (team1.includes("Phase") || team1.includes("Round") || team1.includes("Quarter") || team1.includes("Semi") || team1.includes("Third") || team1.includes("Final"))) {
-        html += `<div class="stage-header-row-flex">
-                   <div class="stage-header-title">${escHtml(team1 || team2)}</div>
-                 </div>`;
+        
+        // If there's already a phase card open, close it before opening the next one
+        if (isContainerOpen) {
+          html += `</div></div></div></div>`;
+        }
+
+        html += `
+          <div class="predictions-stage-section">
+            <div class="stage-section-header">
+              <h3>${escHtml(team1 || team2)}</h3>
+            </div>
+            <div class="predictions-flex-container">
+              <div class="predictions-flex-table">
+                <div class="pred-header">
+                  <div class="cell-match-info">Match</div>
+                  ${playerColumns.map(p => `<div class="cell-player-header">${escHtml(p.name)}</div>`).join('')}
+                </div>
+                <div class="pred-body">`;
+
+        isContainerOpen = true;
         continue;
       }
 
-      // Render standard prediction row
+      // Render standard prediction row inside the current open card
       if (matchNum && !isNaN(matchNum)) {
         html += `<div class="pred-row">
                    <div class="cell-match-info">
@@ -389,9 +437,10 @@ async function loadPredictions() {
                      <span class="m-teams">${escHtml(team1)} vs ${escHtml(team2)}</span>
                    </div>`;
 
-        // Render cell prediction values (Cols E to R -> indices 4 to 17)
-        for (let c = 4; c <= 17; c++) {
-          const pred = row[c] ? row[c].trim().toUpperCase() : '';
+        // Render player prediction values using their dynamically mapped columns
+        for (let i = 0; i < playerColumns.length; i++) {
+          const colIdx = playerColumns[i].colIndex;
+          const pred = row[colIdx] ? row[colIdx].trim().toUpperCase() : '';
           let predClass = '';
           
           if (pred === '1') predClass = 'pred-home';
@@ -404,7 +453,11 @@ async function loadPredictions() {
       }
     }
 
-    html += `</div></div></div>`;
+    // Close the final active section card container
+    if (isContainerOpen) {
+      html += `</div></div></div></div>`;
+    }
+
     container.innerHTML = html;
 
   } catch (err) {
