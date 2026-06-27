@@ -360,25 +360,50 @@ async function loadPredictions() {
     const rows = csvText.split(/\r?\n/).map(row => row.split(','));
     if (rows.length < 3) throw new Error("Spreadsheet contains empty data");
 
-    // Dynamic Header parser: Grabs players directly from Row 2 of the sheet (index 1 in CSV array)
-    const headerRow = rows[1]; 
-    const players = [];
-    for (let c = 4; c <= 17; c++) {
-      if (headerRow[c]) players.push(headerRow[c].trim());
+    // 🔍 Dynamic Header Finder:
+    // Scan the first 10 rows to locate the row containing player names
+    let headerRow = null;
+    let headerRowIdx = -1;
+    for (let r = 0; r < Math.min(rows.length, 10); r++) {
+      const row = rows[r];
+      const hasBabu = row.some(cell => cell && cell.trim() === 'Babu');
+      if (hasBabu) {
+        headerRow = row;
+        headerRowIdx = r;
+        break;
+      }
+    }
+
+    if (!headerRow) {
+      throw new Error("Could not locate player headers in the spreadsheet");
+    }
+
+    // 🔍 Dynamic Column Mapper:
+    // Safely maps each player name to their exact column index in the sheet
+    const playerColumns = [];
+    for (let c = 0; c < headerRow.length; c++) {
+      const val = headerRow[c] ? headerRow[c].trim() : '';
+      if (PLAYER_INFO[val]) {
+        playerColumns.push({ name: val, colIndex: c });
+      }
     }
 
     let html = '';
     let isContainerOpen = false;
 
-    for (let idx = 2; idx < rows.length; idx++) {
+    // Start looping through the rows immediately following the discovered header row
+    for (let idx = headerRowIdx + 1; idx < rows.length; idx++) {
       const row = rows[idx];
-      if (!row || row.length < 5) continue;
+      if (!row || row.length < 3) continue;
 
+      // Column B (index 1) is match number
+      // Column C (index 2) is Team 1
+      // Column D (index 3) is Team 2
       const matchNum = row[1] ? row[1].trim() : '';
       const team1 = row[2] ? row[2].trim() : '';
       const team2 = row[3] ? row[3].trim() : '';
 
-      // Detect Phase boundaries dynamically in column C/D to split into standalone cards
+      // Detect Phase boundaries dynamically to split into standalone cards
       if (!matchNum && (team1.includes("Phase") || team1.includes("Round") || team1.includes("Quarter") || team1.includes("Semi") || team1.includes("Third") || team1.includes("Final"))) {
         
         // If there's already a phase card open, close it before opening the next one
@@ -395,7 +420,7 @@ async function loadPredictions() {
               <div class="predictions-flex-table">
                 <div class="pred-header">
                   <div class="cell-match-info">Match</div>
-                  ${players.map(p => `<div class="cell-player-header">${escHtml(p)}</div>`).join('')}
+                  ${playerColumns.map(p => `<div class="cell-player-header">${escHtml(p.name)}</div>`).join('')}
                 </div>
                 <div class="pred-body">`;
 
@@ -411,9 +436,10 @@ async function loadPredictions() {
                      <span class="m-teams">${escHtml(team1)} vs ${escHtml(team2)}</span>
                    </div>`;
 
-        // Render cell prediction values (Cols E to R -> indices 4 to 17)
-        for (let c = 4; c <= 17; c++) {
-          const pred = row[c] ? row[c].trim().toUpperCase() : '';
+        // Render player prediction values using their dynamically mapped columns
+        for (let i = 0; i < playerColumns.length; i++) {
+          const colIdx = playerColumns[i].colIndex;
+          const pred = row[colIdx] ? row[colIdx].trim().toUpperCase() : '';
           let predClass = '';
           
           if (pred === '1') predClass = 'pred-home';
