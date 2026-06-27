@@ -288,6 +288,7 @@ aside#card-panel {
   font-family: 'Oswald', sans-serif;
   font-size: 1.6rem;
   letter-spacing: 0;
+  text-transform: uppercase;
   color: var(--cream);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -465,7 +466,8 @@ aside#card-panel {
 }
 
 .score-cell {
-  font-family: 'Anton', sans-serif;
+  font-family: 'Oswald', sans-serif; /* 👈 Changed from 'Anton' to 'Oswald' */
+  font-variant-numeric: tabular-nums; /* 👈 Forces 1 to be the exact same width as 3, 5, 9 */
   font-size: 1.4rem;
   color: var(--gold);
 }
