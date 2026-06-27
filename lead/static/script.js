@@ -151,7 +151,7 @@ async function loadBoard(boardKey) {
   }
 }
 
-// ── Optimized 60ms Fast-Stagger DOM Vault Preloader Engine ──
+// ── Diagnostic 60ms Fast-Stagger DOM Vault Preloader Engine ──
 function triggerBackgroundPreload() {
   const players = Object.keys(PLAYER_INFO);
   const totalPlayers = players.length;
@@ -166,6 +166,8 @@ function triggerBackgroundPreload() {
 
   progressContainer.classList.remove('hidden');
 
+  console.log("🚀 Starting card preload sync loop...");
+
   function handleItemProcessed() {
     preloadedCount++;
     const currentPercentage = Math.round((preloadedCount / totalPlayers) * 100);
@@ -174,6 +176,7 @@ function triggerBackgroundPreload() {
     progressPercentText.innerText = `${currentPercentage}%`;
 
     if (preloadedCount === totalPlayers) {
+      console.log("🏁 All 14 cards successfully anchored into layout memory!");
       setTimeout(() => {
         progressContainer.style.opacity = '0';
         setTimeout(() => {
@@ -184,7 +187,6 @@ function triggerBackgroundPreload() {
   }
   
   players.forEach((name, index) => {
-    // 60ms stagger speed-run pipeline handles concurrent networking without crashing free-tier container CPUs
     setTimeout(() => {
       const info = PLAYER_INFO[name];
       
@@ -195,26 +197,28 @@ function triggerBackgroundPreload() {
 
       if (info) {
         const url = `${CARD_URL}?avatar=${info.avatar}&user=${encodeURIComponent(info.user)}&bg=gc`;
+        const startTime = performance.now();
+        
         const imgEl = new Image();
         imgEl.className = "card-img";
         imgEl.setAttribute('data-preload-user', name);
         
         imgEl.onload = function() {
-          console.log(`📡 DOM Vault secured: ${name}`);
+          const endTime = performance.now();
+          const duration = ((endTime - startTime) / 1000).toFixed(2);
+          console.log(`📡 [SUCCESS] Cached card for ${name} in ${duration}s`);
           handleItemProcessed();
         };
         
         imgEl.onerror = function() {
-          console.warn(`⚠️ Preload failed for: ${name}`);
+          console.warn(`⚠️ [FAILED] Card preload timed out for: ${name}`);
           handleItemProcessed();
         };
 
         imgEl.src = url;
-        imgEl.alt = `${name}'s card`;
-        
         vault.appendChild(imgEl);
       }
-    }, index * 60);
+    }, index * 60); // Clean 60ms pipelining speed
   });
 }
 
@@ -231,11 +235,9 @@ document.getElementById('refresh-btn').addEventListener('click', () => {
   loadBoard(activeBoard);
 });
 
-// Primary Handshake initialization
 loadBoard('lead');
 
-// Wake up Render Free Tier immediately if it was asleep
-fetch('https://wc2026-i9es.onrender.com/').catch(() => {});
+// Wake up Render Free Tier instantly via stealth handshake to bypass CORS checks
+fetch('https://wc2026-i9es.onrender.com/', { mode: 'no-cors' }).catch(() => {});
 
-// Trigger card pipeline shortly after initial layout frames paint
 setTimeout(triggerBackgroundPreload, 1200);
