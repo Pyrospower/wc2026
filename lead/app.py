@@ -11,24 +11,26 @@ SHEET_CSV_URL = os.environ.get("SHEET_CSV_URL")
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 
 
-# Column layout for each leaderboard, as (name_col_index, score_col_index), 0-based.
-# B=1, C=2 / E=4, F=5 / H=7, I=8 / K=10, L=11
+# Column and row layouts for each leaderboard (0-based indexes)
+# Spreadsheet Rows 2-15 -> index 1:15 | Rows 18-31 -> index 17:31
 LEADERBOARDS = {
-    "lead": {"name_col": 1, "score_col": 2, "title": "GENERAL CLASSIFICATION"},
-    "m1": {"name_col": 4, "score_col": 5, "title": "MATCHDAY 1"},
-    "m2": {"name_col": 7, "score_col": 8, "title": "MATCHDAY 2"},
-    "m3": {"name_col": 10, "score_col": 11, "title": "MATCHDAY 3"},
+    "lead": {"name_col": 1, "score_col": 2, "title": "GENERAL CLASSIFICATION", "start_row": 1, "end_row": 15},
+    "m1": {"name_col": 4, "score_col": 5, "title": "MATCHDAY 1", "start_row": 1, "end_row": 15},
+    "m2": {"name_col": 7, "score_col": 8, "title": "MATCHDAY 2", "start_row": 1, "end_row": 15},
+    "m3": {"name_col": 10, "score_col": 11, "title": "MATCHDAY 3", "start_row": 1, "end_row": 15},
+    "m4": {"name_col": 1, "score_col": 2, "title": "MATCHDAY 4", "start_row": 17, "end_row": 31},
 }
 
 
-def fetch_leaderboard(name_col, score_col):
+def fetch_leaderboard(name_col, score_col, start_row, end_row):
     response = requests.get(SHEET_CSV_URL, timeout=10)
     response.raise_for_status()
 
-    reader = csv.reader(StringIO(response.text))
+    # Convert to a list to easily slice by row indices
+    reader = list(csv.reader(StringIO(response.text)))
     players = []
 
-    for row in reader:
+    for row in reader[start_row:end_row]:
         required_len = max(name_col, score_col) + 1
         if len(row) < required_len:
             row += [""] * (required_len - len(row))
@@ -86,7 +88,7 @@ def post_route_for(board_key):
 
     def handler():
         try:
-            players = fetch_leaderboard(board["name_col"], board["score_col"])
+            players = fetch_leaderboard(board["name_col"], board["score_col"], board["start_row"], board["end_row"])
             status = post_to_discord(players, board["title"])
             return jsonify({"ok": True, "players": len(players), "discord_status": status})
         except Exception as e:
@@ -101,7 +103,7 @@ def preview_route_for(board_key):
 
     def handler():
         try:
-            players = fetch_leaderboard(board["name_col"], board["score_col"])
+            players = fetch_leaderboard(board["name_col"], board["score_col"], board["start_row"], board["end_row"])
             return jsonify({"ok": True, "players": [{"name": n, "score": s} for n, s in players]})
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
@@ -113,7 +115,8 @@ def preview_route_for(board_key):
 app.add_url_rule("/post", "post_lead", post_route_for("lead"), methods=["GET", "POST"])
 app.add_url_rule("/preview", "preview_lead", preview_route_for("lead"), methods=["GET"])
 
-for key in ("m1", "m2", "m3"):
+# Added "m4" to the endpoints loop
+for key in ("m1", "m2", "m3", "m4"):
     app.add_url_rule(f"/{key}", f"post_{key}", post_route_for(key), methods=["GET", "POST"])
     app.add_url_rule(f"/{key}/preview", f"preview_{key}", preview_route_for(key), methods=["GET"])
 

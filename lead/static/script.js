@@ -3,6 +3,7 @@ const ENDPOINTS = {
   m1:   '/m1/preview',
   m2:   '/m2/preview',
   m3:   '/m3/preview',
+  m4:   '/m4/preview', // <-- Added Matchday 4 endpoint
 };
 
 const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
