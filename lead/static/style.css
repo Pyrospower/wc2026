@@ -191,6 +191,12 @@ nav {
   max-width: 980px;
   margin: 0 auto;
   padding: 2rem 1.25rem 4rem;
+  transition: max-width 0.25s ease-in-out; /* Smoothly transitions layout width expand/shrink */
+}
+
+/* Applied dynamically when the Predictions view is active to give the wide grid more room on desktop */
+.content-wrap.wide-layout {
+  max-width: 1400px; /* Expands width to let the wide matrix fit comfortably on widescreen monitors */
 }
 
 main {
@@ -604,6 +610,33 @@ footer {
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ── Predictions Stage Sections (Standalone Cards) ── */
+.predictions-stage-section {
+  display: flex;
+  flex-direction: column;
+  margin-top: 2rem;
+}
+
+.predictions-stage-section:first-child {
+  margin-top: 0.5rem; /* Prevents double margins at the top of the container */
+}
+
+.stage-section-header {
+  margin-bottom: 0.75rem;
+  padding-left: 0.25rem;
+}
+
+.stage-section-header h3 {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border-left: 3px solid var(--gold);
+  padding-left: 10px;
+  line-height: 1.2;
+}
+
 /* ── Predictions Flex Matrix Styling ── */
 .predictions-flex-container {
   width: 100%;
@@ -612,13 +645,12 @@ footer {
   border: 1px solid var(--card-line);
   background: var(--card-bg);
   box-shadow: 0 20px 70px rgba(0,0,0,0.45);
-  margin-top: 1rem;
 }
 
 .predictions-flex-table {
   display: flex;
   flex-direction: column;
-  min-width: 1150px; /* Bounding box holds all columns tightly aligned */
+  min-width: 1300px; /* Bounding box holds all columns tightly aligned with extra player column size */
   width: 100%;
 }
 
@@ -661,7 +693,7 @@ footer {
 
 /* 📏 PURE COLUMN SIZES FOR PREDICTIONS GRID */
 .cell-match-info {
-  flex: 0 0 220px; /* Exact same width for Match header and cells */
+  flex: 0 0 240px; /* Increased slightly to cleanly fit long team names without wrapping */
   display: flex;
   align-items: center;
   gap: 10px;
@@ -679,7 +711,7 @@ footer {
 }
 
 .cell-player-pred {
-  flex: 0 0 65px; /* Monospace player columns matching headers */
+  flex: 0 0 75px; /* Monospace player columns matching headers with comfortable padding */
   text-align: center;
   font-family: 'Oswald', sans-serif;
   font-size: 14px;
@@ -693,7 +725,7 @@ footer {
 }
 
 .cell-player-header {
-  flex: 0 0 65px;
+  flex: 0 0 75px;
   text-align: center;
   font-family: 'Oswald', sans-serif;
   font-weight: 500;

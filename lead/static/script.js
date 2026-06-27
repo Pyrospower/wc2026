@@ -321,12 +321,18 @@ const btnStandings = document.getElementById('btn-standings');
 const btnPredictions = document.getElementById('btn-predictions');
 const viewStandings = document.getElementById('view-standings');
 const viewPredictions = document.getElementById('view-predictions');
+const cardPanel = document.getElementById('card-panel');
+const contentWrap = document.querySelector('.content-wrap');
 
 btnStandings.addEventListener('click', () => {
   btnStandings.classList.add('active');
   btnPredictions.classList.remove('active');
   viewStandings.style.display = 'block';
   viewPredictions.style.display = 'none';
+
+  // Show the card panel and return container back to the regular width
+  cardPanel.style.display = 'block';
+  contentWrap.classList.remove('wide-layout');
 });
 
 btnPredictions.addEventListener('click', () => {
@@ -334,6 +340,11 @@ btnPredictions.addEventListener('click', () => {
   btnStandings.classList.remove('active');
   viewStandings.style.display = 'none';
   viewPredictions.style.display = 'block';
+
+  // Hide the card panel and widen the container to let columns fit comfortably
+  cardPanel.style.display = 'none';
+  contentWrap.classList.add('wide-layout');
+  
   loadPredictions();
 });
 
@@ -356,14 +367,8 @@ async function loadPredictions() {
       if (headerRow[c]) players.push(headerRow[c].trim());
     }
 
-    // Build responsive flex matrix
-    let html = `<div class="predictions-flex-container">
-                  <div class="predictions-flex-table">
-                    <div class="pred-header">
-                      <div class="cell-match-info">Match</div>
-                      ${players.map(p => `<div class="cell-player-header">${escHtml(p)}</div>`).join('')}
-                    </div>
-                    <div class="pred-body">`;
+    let html = '';
+    let isContainerOpen = false;
 
     for (let idx = 2; idx < rows.length; idx++) {
       const row = rows[idx];
@@ -373,15 +378,32 @@ async function loadPredictions() {
       const team1 = row[2] ? row[2].trim() : '';
       const team2 = row[3] ? row[3].trim() : '';
 
-      // Detect visual stages (like "Group Phase", "Round of 32") in merged columns
+      // Detect Phase boundaries dynamically in column C/D to split into standalone cards
       if (!matchNum && (team1.includes("Phase") || team1.includes("Round") || team1.includes("Quarter") || team1.includes("Semi") || team1.includes("Third") || team1.includes("Final"))) {
-        html += `<div class="stage-header-row-flex">
-                   <div class="stage-header-title">${escHtml(team1 || team2)}</div>
-                 </div>`;
+        
+        // If there's already a phase card open, close it before opening the next one
+        if (isContainerOpen) {
+          html += `</div></div></div></div>`;
+        }
+
+        html += `
+          <div class="predictions-stage-section">
+            <div class="stage-section-header">
+              <h3>${escHtml(team1 || team2)}</h3>
+            </div>
+            <div class="predictions-flex-container">
+              <div class="predictions-flex-table">
+                <div class="pred-header">
+                  <div class="cell-match-info">Match</div>
+                  ${players.map(p => `<div class="cell-player-header">${escHtml(p)}</div>`).join('')}
+                </div>
+                <div class="pred-body">`;
+
+        isContainerOpen = true;
         continue;
       }
 
-      // Render standard prediction row
+      // Render standard prediction row inside the current open card
       if (matchNum && !isNaN(matchNum)) {
         html += `<div class="pred-row">
                    <div class="cell-match-info">
@@ -404,7 +426,11 @@ async function loadPredictions() {
       }
     }
 
-    html += `</div></div></div>`;
+    // Close the final active section card container
+    if (isContainerOpen) {
+      html += `</div></div></div></div>`;
+    }
+
     container.innerHTML = html;
 
   } catch (err) {
