@@ -56,14 +56,45 @@ async def hl_get(session, path, params=None):
             return data
         return None
 
+TEAM_FLAGS = {
+    "mexico": "🇲🇽", "canada": "🇨🇦", "united states": "🇺🇸", "usa": "🇺🇸",
+    "argentina": "🇦🇷", "brazil": "🇧🇷", "uruguay": "🇺🇾", "colombia": "🇨🇴",
+    "ecuador": "🇪🇨", "chile": "🇨🇱", "paraguay": "🇵🇾", "peru": "🇵🇪", "bolivia": "🇧🇴", "venezuela": "🇻🇪",
+    "france": "🇫🇷", "germany": "🇩🇪", "spain": "🇪🇸", "england": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "portugal": "🇵🇹",
+    "netherlands": "🇳🇱", "belgium": "🇧🇪", "italy": "🇮🇹", "croatia": "🇭🇷", "switzerland": "🇨🇭",
+    "denmark": "🇩🇰", "austria": "🇦🇹", "poland": "🇵🇱", "ukraine": "🇺🇦", "serbia": "🇷🇸",
+    "scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "wales": "🏴󠁧󠁢󠁷󠁬󠁳󠁿", "norway": "🇳🇴", "sweden": "🇸🇪", "czech republic": "🇨🇿", "czechia": "🇨🇿",
+    "slovakia": "🇸🇰", "slovenia": "🇸🇮", "romania": "🇷🇴", "turkey": "🇹🇷", "greece": "🇬🇷",
+    "hungary": "🇭🇺", "finland": "🇫🇮", "ireland": "🇮🇪", "northern ireland": "🇬🇧", "iceland": "🇮🇸",
+    "japan": "🇯🇵", "south korea": "🇰🇷", "korea republic": "🇰🇷", "australia": "🇦🇺", "iran": "🇮🇷",
+    "saudi arabia": "🇸🇦", "qatar": "🇶🇦", "uzbekistan": "🇺🇿", "jordan": "🇯🇴", "china": "🇨🇳",
+    "iraq": "🇮🇶", "indonesia": "🇮🇩", "north korea": "🇰🇵", "bahrain": "🇧🇭", "kuwait": "🇰🇼",
+    "morocco": "🇲🇦", "senegal": "🇸🇳", "tunisia": "🇹🇳", "egypt": "🇪🇬", "algeria": "🇩🇿",
+    "nigeria": "🇳🇬", "ghana": "🇬🇭", "cameroon": "🇨🇲", "ivory coast": "🇨🇮", "cote d'ivoire": "🇨🇮",
+    "south africa": "🇿🇦", "cape verde": "🇨🇻", "dr congo": "🇨🇩", "mali": "🇲🇱", "gabon": "🇬🇦",
+    "jamaica": "🇯🇲", "panama": "🇵🇦", "costa rica": "🇨🇷", "honduras": "🇭🇳", "curacao": "🇨🇼",
+    "haiti": "🇭🇹", "new zealand": "🇳🇿", "new caledonia": "🇳🇨",
+}
+
+def team_flag(name):
+    return TEAM_FLAGS.get((name or "").strip().lower(), "")
+
+def safe_name(val, default=""):
+    """Extract a name whether val is a dict like {'name': 'France'} or already a string."""
+    if isinstance(val, dict):
+        return val.get("name", default)
+    if isinstance(val, str):
+        return val
+    return default
+
 def format_events(events):
     """Format goal/card events into readable lines."""
     lines = []
     for e in events:
         etype = e.get("type", "").upper()
         minute = e.get("minute", "?")
-        player = e.get("player", {}).get("name", "Unknown")
-        team = e.get("team", {}).get("name", "")
+        player = safe_name(e.get("player", {}), "Unknown")
+        team = safe_name(e.get("team", {}))
         if etype == "GOAL":
             lines.append(f"⚽ `{minute}'` **{player}** ({team})")
         elif etype == "OWN_GOAL":
@@ -77,8 +108,8 @@ def format_events(events):
     return lines
 
 def format_match_embed(m, title=None):
-    home = m.get("homeTeam", {}).get("name", "TBD")
-    away = m.get("awayTeam", {}).get("name", "TBD")
+    home = safe_name(m.get("homeTeam", {}), "TBD")
+    away = safe_name(m.get("awayTeam", {}), "TBD")
     status = m.get("status", {})
     status_short = status.get("short", "NS")
     elapsed = status.get("elapsed")
@@ -122,7 +153,7 @@ def format_match_embed(m, title=None):
         if event_lines:
             embed.add_field(name="📋 Events", value="\n".join(event_lines[:20]), inline=False)
 
-    group = m.get("round", {}).get("name", "")
+    group = safe_name(m.get("round", {}))
     if group:
         embed.set_footer(text=group)
 
@@ -210,8 +241,8 @@ async def on_message(message):
                 return
             embed = discord.Embed(title=f"⚽ World Cup 2026 — {today}", color=0x1a3a2a)
             for m in matches:
-                home = m.get("homeTeam", {}).get("name", "TBD")
-                away = m.get("awayTeam", {}).get("name", "TBD")
+                home = safe_name(m.get("homeTeam", {}), "TBD")
+                away = safe_name(m.get("awayTeam", {}), "TBD")
                 hs = m.get("homeScore")
                 aws = m.get("awayScore")
                 status_short = m.get("status", {}).get("short", "NS")
@@ -260,8 +291,8 @@ async def on_message(message):
             if team_filter:
                 matches = [
                     m for m in matches
-                    if team_filter in m.get("homeTeam", {}).get("name", "").lower()
-                    or team_filter in m.get("awayTeam", {}).get("name", "").lower()
+                    if team_filter in safe_name(m.get("homeTeam", {})).lower()
+                    or team_filter in safe_name(m.get("awayTeam", {})).lower()
                 ]
                 if not matches:
                     await msg.edit(content=f"ℹ️ **{team_filter.title()}** is not playing live right now.")
@@ -310,8 +341,8 @@ async def on_message(message):
                     for m in matches_list:
                         if not isinstance(m, dict):
                             continue
-                        home = m.get("homeTeam", {}).get("name", "").lower()
-                        away = m.get("awayTeam", {}).get("name", "").lower()
+                        home = safe_name(m.get("homeTeam", {})).lower()
+                        away = safe_name(m.get("awayTeam", {})).lower()
                         if team_name.lower() in home or team_name.lower() in away:
                             found = m
                             break
@@ -358,8 +389,8 @@ async def on_message(message):
                 return
             found = None
             for m in data["data"]:
-                home = m.get("homeTeam", {}).get("name", "").lower()
-                away = m.get("awayTeam", {}).get("name", "").lower()
+                home = safe_name(m.get("homeTeam", {})).lower()
+                away = safe_name(m.get("awayTeam", {})).lower()
                 if team_name.lower() in home or team_name.lower() in away:
                     found = m
                     break
@@ -373,8 +404,8 @@ async def on_message(message):
                 await msg.edit(content=f"⏳ Lineups not available yet for **{team_name}** (available ~30min before kickoff).")
                 return
             lineups = lineup_data["data"]
-            home_name = found.get("homeTeam", {}).get("name", "Home")
-            away_name = found.get("awayTeam", {}).get("name", "Away")
+            home_name = safe_name(found.get("homeTeam", {}), "Home")
+            away_name = safe_name(found.get("awayTeam", {}), "Away")
             embed = discord.Embed(
                 title=f"📋 Lineups — {home_name} vs {away_name}",
                 color=0x1a3a2a
@@ -396,10 +427,11 @@ async def on_message(message):
             await msg.edit(content=f"❌ Error: {e}")
 
     # ── Standings ──
-    elif content == "-standings":
+    elif content == "-standings" or low.startswith("-standings "):
         if not HIGHLIGHTLY_API_KEY:
             await message.channel.send("❌ `HIGHLIGHTLY_API_KEY` not set.")
             return
+        group_filter = content[11:].strip().upper() if low.startswith("-standings ") else None
         msg = await message.channel.send("⏳ Fetching World Cup standings...")
         try:
             async with aiohttp.ClientSession() as session:
@@ -412,6 +444,16 @@ async def on_message(message):
             if not groups:
                 await msg.edit(content="ℹ️ Standings not available yet.")
                 return
+
+            if group_filter:
+                def group_matches(g):
+                    name = (g.get("name") or "").upper()
+                    return name == group_filter or name == f"GROUP {group_filter}" or name.endswith(f" {group_filter}")
+                groups = [g for g in groups if group_matches(g)]
+                if not groups:
+                    await msg.edit(content=f"❌ No group found matching **{group_filter}**.")
+                    return
+
             await msg.delete()
             for group in groups[:6]:
                 group_name = group.get("name", "Group")
@@ -421,11 +463,10 @@ async def on_message(message):
                 lines = []
                 for row in rows:
                     pos = row.get("position") or row.get("rank", "?")
-                    team = row.get("team", {}).get("name") or row.get("name", "?")
+                    team = safe_name(row.get("team", {})) or row.get("name", "?")
                     pts = row.get("points", 0)
-                    played = row.get("played") or row.get("gamesPlayed", 0)
-                    gd = row.get("goalDifference") or row.get("goalsDiff", 0)
-                    lines.append(f"`{pos}.` **{team}** | P:{played} GD:{gd:+d} Pts:**{pts}**")
+                    flag = team_flag(team)
+                    lines.append(f"`{pos}.` {flag} **{team}** — **{pts}** pts")
                 embed.description = "\n".join(lines) if lines else "No data yet"
                 await message.channel.send(embed=embed)
         except Exception as e:
@@ -495,8 +536,8 @@ async def on_message(message):
             )
 
             for m in matches:
-                home = m.get("homeTeam", {}).get("name", "TBD")
-                away = m.get("awayTeam", {}).get("name", "TBD")
+                home = safe_name(m.get("homeTeam", {}), "TBD")
+                away = safe_name(m.get("awayTeam", {}), "TBD")
                 hs = m.get("homeScore")
                 aws = m.get("awayScore")
                 status_short = m.get("status", {}).get("short", "NS")
@@ -536,7 +577,7 @@ async def on_message(message):
         embed.add_field(name="-live [team]", value="Live matches with goal scorers — e.g. `-live` or `-live France`", inline=False)
         embed.add_field(name="-match <team>", value="Match details & events — e.g. `-match France`", inline=False)
         embed.add_field(name="-lineup <team>", value="Starting lineup — e.g. `-lineup Brazil`", inline=False)
-        embed.add_field(name="-standings", value="Group stage standings", inline=False)
+        embed.add_field(name="-standings [group]", value="Group stage standings — e.g. `-standings` or `-standings A`", inline=False)
         embed.add_field(name="-bracket", value="Knockout bracket menu", inline=False)
         embed.add_field(name="-bracket <round>", value="`r32` `r16` `qf` `sf` `final` `3rd`", inline=False)
         await message.channel.send(embed=embed)
