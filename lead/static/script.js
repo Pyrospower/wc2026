@@ -28,7 +28,7 @@ const PLAYER_INFO = {
   'Pyro':    { avatar: 12, user: 'pyrospower' },
   'Edna':    { avatar: 26, user: 'edna_san' },
   'BimBim':  { avatar: 21, user: 'bimbastic' },
-  'Squally': { font: 'Oswald', avatar: 11, user: 'squallyy' },
+  'Squally': { avatar: 11, user: 'squallyy' },
   'Hype':    { avatar: 18, user: 'hypetrain' },
   'Sunny':   { avatar: 21, user: 'sunnyrainlight' },
   'D4':      { avatar: 14, user: 'akuma5336' },
@@ -131,7 +131,7 @@ function showCard(name) {
   `;
 
   const visibleClone = imgEl.cloneNode(true);
-  panel.appendChild(innerLayout);
+  panel.appendChild(innerLayout); // Fixed: Appends layout wrapper
   panel.querySelector('.card-img-holder').appendChild(visibleClone);
 
   document.querySelectorAll('.player-row').forEach(row => {
@@ -388,6 +388,7 @@ async function loadPredictions() {
       }
     }
 
+    // Build responsive flex matrix
     let html = '';
     let isContainerOpen = false;
 
