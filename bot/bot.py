@@ -172,14 +172,25 @@ async def on_message(message):
             await msg.edit(content=f"❌ Error: {e}")
 
     # ── Today's WC Matches ──
-    elif content == "-today":
+    elif low.startswith("-today"):
         if not HIGHLIGHTLY_API_KEY:
             await message.channel.send("❌ `HIGHLIGHTLY_API_KEY` not set.")
             return
-        msg = await message.channel.send("⏳ Fetching today's World Cup matches...")
+        arg = content[6:].strip().lower()
+        from datetime import date, timedelta
+        if arg == "yesterday" or arg == "yday":
+            search_date = (date.today() - timedelta(days=1)).isoformat()
+            label = "Yesterday"
+        elif arg == "tomorrow" or arg == "tmrw":
+            search_date = (date.today() + timedelta(days=1)).isoformat()
+            label = "Tomorrow"
+        else:
+            search_date = date.today().isoformat()
+            label = "Today"
+        today = search_date
+        msg = await message.channel.send(f"⏳ Fetching {label}'s World Cup matches...")
         try:
             from datetime import date
-            today = date.today().isoformat()
             async with aiohttp.ClientSession() as session:
                 data = await hl_get(session, "/matches", {"date": today, "leagueId": WC_LEAGUE_ID})
             if not data or not data.get("data"):
@@ -218,11 +229,13 @@ async def on_message(message):
             await msg.edit(content=f"❌ Error: {e}")
 
     # ── Live Matches ──
-    elif content == "-live":
+    elif low.startswith("-live"):
+        team_filter = content[5:].strip().lower() if len(content) > 5 else ""
         if not HIGHLIGHTLY_API_KEY:
             await message.channel.send("❌ `HIGHLIGHTLY_API_KEY` not set.")
             return
-        msg = await message.channel.send("⏳ Fetching live World Cup matches...")
+        label = f"**{team_filter.title()}**" if team_filter else "all"
+        msg = await message.channel.send(f"⏳ Fetching live World Cup matches ({label})...")
         try:
             async with aiohttp.ClientSession() as session:
                 data = await hl_get(session, "/matches/live", {"leagueId": WC_LEAGUE_ID})
@@ -230,10 +243,24 @@ async def on_message(message):
                 await msg.edit(content="ℹ️ No live World Cup matches right now.")
                 return
             matches = data["data"]
+            if team_filter:
+                matches = [
+                    m for m in matches
+                    if team_filter in m.get("homeTeam", {}).get("name", "").lower()
+                    or team_filter in m.get("awayTeam", {}).get("name", "").lower()
+                ]
+                if not matches:
+                    await msg.edit(content=f"ℹ️ **{team_filter.title()}** is not playing live right now.")
+                    return
             await msg.delete()
-            for m in matches:
-                embed = format_match_embed(m)
-                await message.channel.send(embed=embed)
+            async with aiohttp.ClientSession() as session:
+                for m in matches:
+                    match_id = m.get("id")
+                    detail = await hl_get(session, f"/matches/{match_id}", {})
+                    if detail and detail.get("data"):
+                        m = detail["data"]
+                    embed = format_match_embed(m)
+                    await message.channel.send(embed=embed)
         except Exception as e:
             await msg.edit(content=f"❌ Error: {e}")
 
@@ -248,23 +275,29 @@ async def on_message(message):
             return
         msg = await message.channel.send(f"⏳ Searching for **{team_name}**'s match...")
         try:
-            from datetime import date
-            today = date.today().isoformat()
-            async with aiohttp.ClientSession() as session:
-                data = await hl_get(session, "/matches", {"date": today, "leagueId": WC_LEAGUE_ID})
-            if not data or not data.get("data"):
-                await msg.edit(content="ℹ️ No matches found today.")
-                return
-            matches = data["data"]
+            from datetime import date, timedelta
+            # Search yesterday, today, and tomorrow to handle timezone differences
+            dates = [
+                (date.today() - timedelta(days=1)).isoformat(),
+                date.today().isoformat(),
+                (date.today() + timedelta(days=1)).isoformat(),
+            ]
             found = None
-            for m in matches:
-                home = m.get("homeTeam", {}).get("name", "").lower()
-                away = m.get("awayTeam", {}).get("name", "").lower()
-                if team_name.lower() in home or team_name.lower() in away:
-                    found = m
-                    break
+            async with aiohttp.ClientSession() as session:
+                for search_date in dates:
+                    data = await hl_get(session, "/matches", {"date": search_date, "leagueId": WC_LEAGUE_ID})
+                    if not data or not data.get("data"):
+                        continue
+                    for m in data["data"]:
+                        home = m.get("homeTeam", {}).get("name", "").lower()
+                        away = m.get("awayTeam", {}).get("name", "").lower()
+                        if team_name.lower() in home or team_name.lower() in away:
+                            found = m
+                            break
+                    if found:
+                        break
             if not found:
-                await msg.edit(content=f"❌ No match found for **{team_name}** today.")
+                await msg.edit(content=f"❌ No recent match found for **{team_name}**.")
                 return
             # Fetch full match details with events
             match_id = found.get("id")
@@ -344,8 +377,13 @@ async def on_message(message):
         try:
             async with aiohttp.ClientSession() as session:
                 data = await hl_get(session, "/standings", {"leagueId": WC_LEAGUE_ID, "season": 2026})
-            if not data or not data.get("data"):
-                await msg.edit(content="ℹ️ Standings not available yet.")
+            if not data:
+                await msg.edit(content="ℹ️ No response from API.")
+                return
+            # Debug: show raw keys if data is unexpected
+            if not data.get("data"):
+                keys = list(data.keys()) if isinstance(data, dict) else str(type(data))
+                await msg.edit(content=f"ℹ️ Standings not available yet. (API keys: {keys})")
                 return
             groups = data["data"]
             await msg.delete()
@@ -467,8 +505,8 @@ async def on_message(message):
     elif content == "-help":
         embed = discord.Embed(title="⚽ WC2026 Bot Commands", color=0x1a3a2a)
         embed.add_field(name="Leaderboard", value="`-lead` `-m1` `-m2` `-m3`", inline=False)
-        embed.add_field(name="-today", value="Today's World Cup matches", inline=False)
-        embed.add_field(name="-live", value="Currently live matches with goal scorers", inline=False)
+        embed.add_field(name="-today [yday/tmrw]", value="World Cup matches — e.g. `-today` or `-today yday`", inline=False)
+        embed.add_field(name="-live [team]", value="Live matches with goal scorers — e.g. `-live` or `-live France`", inline=False)
         embed.add_field(name="-match <team>", value="Match details & events — e.g. `-match France`", inline=False)
         embed.add_field(name="-lineup <team>", value="Starting lineup — e.g. `-lineup Brazil`", inline=False)
         embed.add_field(name="-standings", value="Group stage standings", inline=False)
