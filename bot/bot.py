@@ -6,10 +6,10 @@ import discord
 TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 LEADERBOARD_BASE_URL = "https://wc2026-leaderboard.onrender.com"
 HIGHLIGHTLY_API_KEY = os.environ.get("HIGHLIGHTLY_API_KEY")
-HIGHLIGHTLY_BASE = "https://football-api.highlightly.net"
+HIGHLIGHTLY_BASE = "https://soccer.highlightly.net"
 
 # World Cup league ID on Highlightly
-WC_LEAGUE_ID = 28
+WC_LEAGUE_ID = 1635
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -30,7 +30,7 @@ def set_cache(key, data):
 
 def hl_headers():
     return {
-        "x-api-key": HIGHLIGHTLY_API_KEY,
+        "x-rapidapi-key": HIGHLIGHTLY_API_KEY,
         "Accept": "application/json",
     }
 
