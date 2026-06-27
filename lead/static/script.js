@@ -10,7 +10,6 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
 const CARD_URL = 'https://wc2026-i9es.onrender.com/card';
 
-// Sheet name -> { avatar, discord username for card URL }
 const PLAYER_INFO = {
   'Babu':    { avatar: 29, user: 'baburubaburu' },
   'Hotarou': { avatar: 28, user: 'houtarou' },
@@ -28,7 +27,6 @@ const PLAYER_INFO = {
   'Pffq':    { avatar: 20, user: 'xenter0384' },
 };
 
-// Global memory registry to prevent the browser from garbage collecting preloaded cards
 const PERMANENT_IMAGE_CACHE = {};
 
 let activeBoard = 'lead';
@@ -48,7 +46,6 @@ function showCard(name) {
     return;
   }
 
-  // If this specific player's image layout doesn't exist in cache memory, build it now
   if (!PERMANENT_IMAGE_CACHE[name]) {
     const url = `${CARD_URL}?avatar=${info.avatar}&user=${encodeURIComponent(info.user)}&bg=gc`;
     const imgEl = new Image();
@@ -61,16 +58,21 @@ function showCard(name) {
     PERMANENT_IMAGE_CACHE[name] = imgEl;
   }
 
-  panel.innerHTML = `
-    <div class="card-inner">
-      <div class="card-name">${escHtml(name)}</div>
-      <div class="card-img-holder"></div>
-    </div>`;
+  const existingContainer = document.getElementById('preload-progress-container');
+  panel.innerHTML = '';
+  if (existingContainer) {
+    panel.appendChild(existingContainer);
+  }
 
-  // Insert the permanently preserved image object right into our active holder element
+  const innerLayout = document.createElement('div');
+  innerLayout.className = 'card-inner';
+  innerLayout.innerHTML = `
+    <div class="card-name">${escHtml(name)}</div>
+    <div class="card-img-holder"></div>
+  `;
+  panel.appendChild(innerLayout);
   panel.querySelector('.card-img-holder').appendChild(PERMANENT_IMAGE_CACHE[name]);
 
-  // highlight selected row
   document.querySelectorAll('.leaderboard tbody tr').forEach(tr => {
     tr.classList.toggle('selected', tr.dataset.player === name);
   });
@@ -138,10 +140,18 @@ async function loadBoard(boardKey) {
   }
 }
 
-// ── Background Cache Preloader Execution Sequence ──
 function triggerBackgroundPreload() {
-  console.log("🏁 Initializing card preloader memory registry sequence...");
   const players = Object.keys(PLAYER_INFO);
+  const totalPlayers = players.length;
+  let preloadedCount = 0;
+
+  const progressContainer = document.getElementById('preload-progress-container');
+  const progressBarFill = document.getElementById('progress-bar-fill');
+  const progressPercentText = document.getElementById('progress-percent');
+
+  if (!progressContainer || !progressBarFill || !progressPercentText) return;
+
+  progressContainer.classList.remove('hidden');
   
   players.forEach((name, index) => {
     setTimeout(() => {
@@ -155,12 +165,25 @@ function triggerBackgroundPreload() {
         imgEl.onerror = function() {
           this.parentElement.innerHTML = '<div class="card-placeholder"><p>Card unavailable</p></div>';
         };
-        
-        // Lock image object straight into RAM dictionary before appending anywhere
         PERMANENT_IMAGE_CACHE[name] = imgEl;
-        console.log(`📡 Memory Lock applied in background for: ${name}`);
       }
-    }, index * 300); // Staggering protects your free-tier Render server from overloading
+
+      preloadedCount++;
+      const currentPercentage = Math.round((preloadedCount / totalPlayers) * 100);
+      
+      progressBarFill.style.width = `${currentPercentage}%`;
+      progressPercentText.innerText = `${currentPercentage}%`;
+
+      if (preloadedCount === totalPlayers) {
+        setTimeout(() => {
+          progressContainer.style.opacity = '0';
+          setTimeout(() => {
+            progressContainer.classList.add('hidden');
+          }, 400); 
+        }, 1200); 
+      }
+
+    }, index * 250);
   });
 }
 
@@ -177,8 +200,5 @@ document.getElementById('refresh-btn').addEventListener('click', () => {
   loadBoard(activeBoard);
 });
 
-// Run immediate leaderboard setup
 loadBoard('lead');
-
-// Fire the staggered preloader once immediately on landing page load
 setTimeout(triggerBackgroundPreload, 1200);

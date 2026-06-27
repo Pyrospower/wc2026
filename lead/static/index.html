@@ -38,7 +38,7 @@
         <button class="tab" data-board="m1" role="tab">Matchday 1</button>
         <button class="tab" data-board="m2" role="tab">Matchday 2</button>
         <button class="tab" data-board="m3" role="tab">Matchday 3</button>
-        <button class="tab" data-board="m4" role="tab">Matchday 4</button> <!-- Added Matchday 4 Tab Button -->
+        <button class="tab" data-board="m4" role="tab">Matchday 4</button>
       </div>
 
       <div class="refresh-wrap">
@@ -53,6 +53,16 @@
     </main>
 
     <aside id="card-panel">
+      <div id="preload-progress-container" class="preload-progress-wrap hidden">
+        <div class="progress-header">
+          <span class="progress-title">⚽ Syncing Cards...</span>
+          <span id="progress-percent" class="progress-num">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div id="progress-bar-fill" class="progress-bar-fill"></div>
+        </div>
+      </div>
+
       <div class="card-placeholder">
         <span class="card-placeholder-icon">👆</span>
         <p>Click a player<br>to see their card</p>

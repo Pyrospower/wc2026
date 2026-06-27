@@ -179,6 +179,12 @@ aside#card-panel {
   flex-direction: column;
   align-items: center;
   gap: 0.6rem;
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .card-name {
@@ -370,6 +376,61 @@ footer {
   border-top: 1px solid var(--sage);
   max-width: 980px;
   margin: 0 auto;
+}
+
+/* ── Soccer Progress Bar Styles ── */
+.preload-progress-wrap {
+  background-color: var(--pitch-mid);
+  border: 1.5px solid var(--sage-dim);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 0.75rem;
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.15);
+  transition: opacity 0.4s ease;
+}
+
+.preload-progress-wrap.hidden {
+  display: none;
+  opacity: 0;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.progress-title {
+  color: var(--cream);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.progress-num {
+  color: var(--gold);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+}
+
+.progress-bar-bg {
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 20px;
+  height: 6px;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-fill {
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+  height: 100%;
+  width: 0%;
+  border-radius: 20px;
+  box-shadow: 0 0 6px var(--gold);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ── Mobile ── */
