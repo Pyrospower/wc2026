@@ -619,12 +619,13 @@ footer {
 /* ── Predictions Flex Matrix Styling ── */
 .predictions-flex-container {
   width: 100%;
-  overflow-x: auto; /* Handles horizontal scrolling dynamically on mobile */
+  overflow-x: auto; /* Handles horizontal scrolling */
+  max-height: 650px; /* 👈 Sets a clean height limit for the predictions card */
+  overflow-y: auto;  /* 👈 Enables vertical scrolling INSIDE the card */
   border-radius: 12px;
   border: 1px solid var(--card-line);
   background: var(--card-bg);
   box-shadow: 0 20px 70px rgba(0,0,0,0.45);
-  margin-top: 1rem;
 }
 
 .predictions-flex-table {
@@ -639,13 +640,18 @@ footer {
   align-items: center;
   padding: 0.75rem 0.5rem;
   border-bottom: 2px solid var(--card-line);
-  background: rgba(255, 255, 255, 0.02);
+  background: #112d21; /* Solid background to prevent overlapping text */
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
+  
+  /* 📌 Pinned Header Configuration */
+  position: sticky;
+  top: 0; /* Sticks the header to the top of the card during vertical scroll */
+  z-index: 10; /* Keeps it above the scrolling rows */
 }
 
 .pred-body {
@@ -687,7 +693,7 @@ footer {
 /* Slightly lighter green overlay for sticky headers */
 .pred-header .cell-match-info {
   background: #112d21;
-  z-index: 3;
+  z-index: 12; /* 👈 Higher z-index so the Match header stays locked on top of everything */
 }
 
 .cell-player-pred {
