@@ -131,6 +131,12 @@ def static_files(filename):
     return send_from_directory("static", filename)
 
 
+# Serves the service worker from the static folder at the root domain
+@app.route("/sw.js")
+def service_worker():
+    return send_from_directory("static", "sw.js")
+
+
 @app.route("/", methods=["GET"])
 def health():
     return jsonify({"status": "running"})
