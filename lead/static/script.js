@@ -3,7 +3,7 @@ const ENDPOINTS = {
   m1:   '/m1/preview',
   m2:   '/m2/preview',
   m3:   '/m3/preview',
-  m4:   '/m4/preview', // <-- Added Matchday 4 endpoint
+  m4:   '/m4/preview', 
 };
 
 const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
@@ -112,9 +112,26 @@ async function loadBoard(boardKey) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Unknown error');
+    
+    // 1. Render the main dashboard table layout
     container.innerHTML = renderTable(data.players);
     attachRowClicks();
     if (selectedPlayer) showCard(selectedPlayer);
+
+    // 2. STAGGERED PRELOADER SEQUENCE: Silently caches players one-by-one
+    console.log("🏁 Leaderboard loaded! Kicking off card preloader sequence...");
+    const players = Object.keys(PLAYER_INFO);
+    players.forEach((name, index) => {
+      setTimeout(() => {
+        const info = PLAYER_INFO[name];
+        if (info) {
+          const preloadImg = new Image();
+          preloadImg.src = `${CARD_URL}?avatar=${info.avatar}&user=${encodeURIComponent(info.user)}&bg=gc`;
+          console.log(`📡 Preloaded card in background for: ${name}`);
+        }
+      }, index * 300); // 300ms pause spacing stops Render from choking
+    });
+
   } catch (err) {
     container.innerHTML = `
       <div class="state-msg">
@@ -138,18 +155,5 @@ document.getElementById('refresh-btn').addEventListener('click', () => {
   loadBoard(activeBoard);
 });
 
+// Kick off initial call
 loadBoard('lead');
-
-// ── Eager Preloading for Player Cards ──
-window.addEventListener('DOMContentLoaded', () => {
-  // Give the browser 800ms to load the initial points leaderboard first
-  setTimeout(() => {
-    Object.keys(PLAYER_INFO).forEach(name => {
-      const info = PLAYER_INFO[name];
-      if (info) {
-        const preloadImg = new Image();
-        preloadImg.src = `${CARD_URL}?avatar=${info.avatar}&user=${encodeURIComponent(info.user)}&bg=gc`;
-      }
-    });
-  }, 800);
-});
