@@ -180,11 +180,11 @@ async def on_message(message):
             await msg.edit(content=f"❌ Error: {e}")
 
     # ── Today's WC Matches ──
-    elif low.startswith("-today"):
+    elif low.startswith("-tm"):
         if not HIGHLIGHTLY_API_KEY:
             await message.channel.send("❌ `HIGHLIGHTLY_API_KEY` not set.")
             return
-        arg = content[6:].strip().lower()
+        arg = content[3:].strip().lower()
         from datetime import date, timedelta
         if arg == "yesterday" or arg == "yday":
             search_date = (date.today() - timedelta(days=1)).isoformat()
@@ -526,7 +526,7 @@ async def on_message(message):
     elif content == "-help":
         embed = discord.Embed(title="⚽ WC2026 Bot Commands", color=0x1a3a2a)
         embed.add_field(name="Leaderboard", value="`-lead` `-m1` `-m2` `-m3`", inline=False)
-        embed.add_field(name="-today [yday/tmrw]", value="World Cup matches — e.g. `-today` or `-today yday`", inline=False)
+        embed.add_field(name="-tm [yday/tmrw]", value="World Cup matches — e.g. `-tm` or `-tm yday`", inline=False)
         embed.add_field(name="-live [team]", value="Live matches with goal scorers — e.g. `-live` or `-live France`", inline=False)
         embed.add_field(name="-match <team>", value="Match details & events — e.g. `-match France`", inline=False)
         embed.add_field(name="-lineup <team>", value="Starting lineup — e.g. `-lineup Brazil`", inline=False)
