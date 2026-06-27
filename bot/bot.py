@@ -202,12 +202,14 @@ async def on_message(message):
     low = content.lower()
 
     # ── Leaderboard Commands ──
-    if content in ("-lead", "-m1", "-m2", "-m3"):
+    # Added "-m4" to the conditional tuple below
+    if content in ("-lead", "-m1", "-m2", "-m3", "-m4"):
         board_map = {
             "-lead": {"path": "/preview", "title": "GENERAL CLASSIFICATION"},
             "-m1": {"path": "/m1/preview", "title": "MATCHDAY 1"},
             "-m2": {"path": "/m2/preview", "title": "MATCHDAY 2"},
             "-m3": {"path": "/m3/preview", "title": "MATCHDAY 3"},
+            "-m4": {"path": "/m4/preview", "title": "MATCHDAY 4"}, # <-- Added Matchday 4 Map Configuration
         }
         board = board_map[content]
         msg = await message.channel.send(f"⏳ Fetching **{board['title']}**...")
@@ -647,7 +649,8 @@ async def on_message(message):
     # ── Help ──
     elif content == "-help":
         embed = discord.Embed(title="⚽ WC2026 Bot Commands", color=0x1a3a2a)
-        embed.add_field(name="Leaderboard", value="`-lead` `-m1` `-m2` `-m3`", inline=False)
+        # Added "-m4" to the value description field below
+        embed.add_field(name="Leaderboard", value="`-lead` `-m1` `-m2` `-m3` `-m4`", inline=False)
         embed.add_field(name="-tm [yday/tmrw]", value="World Cup matches — e.g. `-tm` or `-tm yday`", inline=False)
         embed.add_field(name="-live [team]", value="Live matches with goal scorers — e.g. `-live` or `-live France`", inline=False)
         embed.add_field(name="-match <team>", value="Match details & events — e.g. `-match France`", inline=False)
