@@ -1,5 +1,5 @@
 from flask import Flask, request, send_file, abort
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import requests
 import io
 import os
@@ -103,6 +103,12 @@ BADGE_Y      = 415  # vertical center (px) of the badge row
 # Safety clamp
 BADGE_SIZE = max(16, min(BADGE_SIZE, 120))
 BADGE_HEIGHT = max(16, min(BADGE_HEIGHT, 140))
+
+# --- Badge shadow config ---
+SHADOW_OFFSET_X = 2      # px shift right
+SHADOW_OFFSET_Y = 3      # px shift down
+SHADOW_BLUR     = 5      # gaussian blur radius
+SHADOW_OPACITY  = 60     # 0-255, kept low so it stays soft/subtle
 # ---------------------------------------------------------------------
 
 
@@ -161,7 +167,18 @@ def card():
             resized = img.copy()
             resized.thumbnail((BADGE_SIZE, BADGE_HEIGHT))
             bw, bh = resized.size
-            card_img.paste(resized, (x, BADGE_Y - bh // 2), resized)
+            paste_y = BADGE_Y - bh // 2
+
+            # Build a soft shadow from the badge's own alpha mask, offset and blurred
+            alpha = resized.split()[-1]
+            shadow_layer = Image.new("RGBA", card_img.size, (0, 0, 0, 0))
+            shadow_shape = Image.new("RGBA", resized.size, (0, 0, 0, SHADOW_OPACITY))
+            shadow_shape.putalpha(alpha)
+            shadow_layer.paste(shadow_shape, (x + SHADOW_OFFSET_X, paste_y + SHADOW_OFFSET_Y), shadow_shape)
+            shadow_layer = shadow_layer.filter(ImageFilter.GaussianBlur(SHADOW_BLUR))
+            card_img = Image.alpha_composite(card_img, shadow_layer)
+
+            card_img.paste(resized, (x, paste_y), resized)
             x += bw + BADGE_GAP  # use actual rendered width
 
     score_color = SCORE_COLORS.get(bg_key, SCORE_COLORS["default"])
