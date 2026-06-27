@@ -91,58 +91,84 @@ def format_events(events):
     """Format goal/card events into readable lines."""
     lines = []
     for e in events:
-        etype = e.get("type", "").upper()
-        minute = e.get("minute", "?")
-        player = safe_name(e.get("player", {}), "Unknown")
+        etype = e.get("type", "")
+        minute = e.get("time", "?")
+        player = e.get("player", "Unknown")
         team = safe_name(e.get("team", {}))
-        if etype == "GOAL":
-            lines.append(f"⚽ `{minute}'` **{player}** ({team})")
-        elif etype == "OWN_GOAL":
-            lines.append(f"🙈 `{minute}'` **{player}** OG ({team})")
-        elif etype == "PENALTY_GOAL":
-            lines.append(f"🎯 `{minute}'` **{player}** (pen) ({team})")
-        elif etype == "YELLOW_CARD":
-            lines.append(f"🟨 `{minute}'` {player} ({team})")
-        elif etype == "RED_CARD":
-            lines.append(f"🟥 `{minute}'` {player} ({team})")
+        flag = team_flag(team)
+        team_disp = f"{flag} {team}".strip() if flag else team
+        assist = e.get("assist")
+        if etype == "Goal":
+            extra = f" (assist: {assist})" if assist else ""
+            lines.append(f"⚽ `{minute}'` **{player}**{extra} ({team_disp})")
+        elif etype == "Own Goal":
+            lines.append(f"🙈 `{minute}'` **{player}** OG ({team_disp})")
+        elif etype == "Missed Penalty":
+            lines.append(f"❌ `{minute}'` **{player}** missed pen ({team_disp})")
+        elif etype == "Yellow Card":
+            lines.append(f"🟨 `{minute}'` {player} ({team_disp})")
+        elif etype == "Red Card":
+            lines.append(f"🟥 `{minute}'` {player} ({team_disp})")
+        elif etype == "Substitution":
+            sub_out = e.get("substituted")
+            extra = f" ↔️ {sub_out}" if sub_out else ""
+            lines.append(f"🔄 `{minute}'` **{player}**{extra} ({team_disp})")
     return lines
+
+def get_match_phase(description):
+    """Collapse Highlightly's state.description into live/ended/scheduled/other."""
+    live_states = {"First Half", "Second Half", "Half Time", "Extra Time",
+                   "Extra Time Half Time", "Penalty Shootout", "Break Time"}
+    ended_states = {"Finished", "Finished AET", "Finished AP",
+                     "Finished After Extra Time", "Finished After Penalties"}
+    if not description:
+        return "scheduled"
+    if description in live_states:
+        return "live"
+    if description in ended_states:
+        return "ended"
+    if description == "Not Started":
+        return "scheduled"
+    return "other"
 
 def format_match_embed(m, title=None):
     home = safe_name(m.get("homeTeam", {}), "TBD")
     away = safe_name(m.get("awayTeam", {}), "TBD")
-    status = m.get("status", {})
-    status_short = status.get("short", "NS")
-    elapsed = status.get("elapsed")
-    home_score = m.get("homeScore")
-    away_score = m.get("awayScore")
+    home_flag = team_flag(home)
+    away_flag = team_flag(away)
+    home_disp = f"{home_flag} {home}".strip()
+    away_disp = f"{away_flag} {away}".strip()
+    state = m.get("state", {}) or {}
+    description = state.get("description", "")
+    clock = state.get("clock")
+    score_obj = state.get("score") or {}
+    score_current = score_obj.get("current")
+    penalties = score_obj.get("penalties")
 
     # Score line
-    if home_score is not None and away_score is not None:
-        score = f"{home_score} - {away_score}"
-    else:
-        score = "vs"
+    score = score_current if score_current else "vs"
 
-    # Status indicator
-    if status_short in ("1H", "2H", "ET", "BT", "P", "LIVE"):
-        status_str = f"🔴 LIVE {elapsed}'" if elapsed else "🔴 LIVE"
+    phase = get_match_phase(description)
+    if phase == "live":
+        status_str = f"🔴 LIVE {clock}'" if clock else f"🔴 LIVE ({description})"
         color = 0xff0000
-    elif status_short == "HT":
-        status_str = "⏸️ Half Time"
-        color = 0xffa500
-    elif status_short == "FT":
-        status_str = "🏁 Full Time"
+    elif phase == "ended":
+        status_str = "🏁 Full Time" if description == "Finished" else f"🏁 {description}"
         color = 0x00aa00
-    elif status_short == "NS":
+    elif phase == "scheduled":
         kickoff = m.get("date", "")
         status_str = f"⏳ {kickoff[:16] if kickoff else 'Scheduled'}"
         color = 0x888888
     else:
-        status_str = status_short
+        status_str = description or "Unknown"
         color = 0x888888
+
+    if penalties:
+        score = f"{score} (Pens: {penalties})"
 
     embed = discord.Embed(
         title=title or f"{home} vs {away}",
-        description=f"## {home}  {score}  {away}\n{status_str}",
+        description=f"## {home_disp}  {score}  {away_disp}\n{status_str}",
         color=color
     )
 
@@ -153,9 +179,11 @@ def format_match_embed(m, title=None):
         if event_lines:
             embed.add_field(name="📋 Events", value="\n".join(event_lines[:20]), inline=False)
 
-    group = safe_name(m.get("round", {}))
+    group = m.get("round", "")
+    if isinstance(group, dict):
+        group = safe_name(group)
     if group:
-        embed.set_footer(text=group)
+        embed.set_footer(text=str(group))
 
     return embed
 
@@ -243,25 +271,25 @@ async def on_message(message):
             for m in matches:
                 home = safe_name(m.get("homeTeam", {}), "TBD")
                 away = safe_name(m.get("awayTeam", {}), "TBD")
-                hs = m.get("homeScore")
-                aws = m.get("awayScore")
-                status_short = m.get("status", {}).get("short", "NS")
-                elapsed = m.get("status", {}).get("elapsed")
-                if hs is not None and aws is not None:
-                    score = f"{hs}–{aws}"
-                else:
-                    score = "vs"
-                if status_short in ("1H","2H","ET","LIVE"):
-                    indicator = f"🔴 {elapsed}'" if elapsed else "🔴"
-                elif status_short == "HT":
-                    indicator = "⏸️ HT"
-                elif status_short == "FT":
+                home_disp = f"{team_flag(home)} {home}".strip()
+                away_disp = f"{team_flag(away)} {away}".strip()
+                state = m.get("state", {}) or {}
+                description = state.get("description", "")
+                clock = state.get("clock")
+                score_current = (state.get("score") or {}).get("current")
+                score = score_current if score_current else "vs"
+                phase = get_match_phase(description)
+                if phase == "live":
+                    indicator = f"🔴 {clock}'" if clock else "🔴 LIVE"
+                elif phase == "ended":
                     indicator = "🏁 FT"
-                else:
+                elif phase == "scheduled":
                     kickoff = m.get("date", "")
                     indicator = f"⏳ {kickoff[11:16] if len(kickoff) > 11 else ''} UTC"
+                else:
+                    indicator = description or "?"
                 embed.add_field(
-                    name=f"{home} {score} {away}",
+                    name=f"{home_disp} {score} {away_disp}",
                     value=indicator,
                     inline=False
                 )
@@ -302,8 +330,12 @@ async def on_message(message):
                 for m in matches:
                     match_id = m.get("id")
                     detail = await hl_get(session, f"/matches/{match_id}", {})
-                    if detail and detail.get("data"):
-                        m = detail["data"]
+                    if isinstance(detail, dict):
+                        detail_obj = detail.get("_raw") or detail.get("data")
+                        if isinstance(detail_obj, list) and detail_obj:
+                            m = detail_obj[0]
+                        elif isinstance(detail_obj, dict):
+                            m = detail_obj
                     embed = format_match_embed(m)
                     await message.channel.send(embed=embed)
         except Exception as e:
@@ -355,12 +387,14 @@ async def on_message(message):
             match_id = found.get("id")
             async with aiohttp.ClientSession() as session:
                 detail = await hl_get(session, f"/matches/{match_id}", {})
-            if isinstance(detail, dict) and detail.get("data"):
-                detail_data = detail["data"]
-                if isinstance(detail_data, list) and detail_data:
-                    found = detail_data[0]
-                elif isinstance(detail_data, dict):
-                    found = detail_data
+            if isinstance(detail, dict):
+                # hl_get's generic normalisation only recognises "groups"/"matches" keys;
+                # a single match-detail object has neither, so it's preserved under "_raw".
+                detail_obj = detail.get("_raw") or detail.get("data")
+                if isinstance(detail_obj, list) and detail_obj:
+                    found = detail_obj[0]
+                elif isinstance(detail_obj, dict):
+                    found = detail_obj
             elif isinstance(detail, list) and detail:
                 found = detail[0]
             embed = format_match_embed(found)
@@ -399,27 +433,41 @@ async def on_message(message):
                 return
             match_id = found.get("id")
             async with aiohttp.ClientSession() as session:
-                lineup_data = await hl_get(session, f"/matches/{match_id}/lineups", {})
-            if not lineup_data or not lineup_data.get("data"):
+                lineup_data = await hl_get(session, f"/lineups/{match_id}", {})
+            if not lineup_data:
                 await msg.edit(content=f"⏳ Lineups not available yet for **{team_name}** (available ~30min before kickoff).")
                 return
-            lineups = lineup_data["data"]
+            # hl_get's generic normalisation expects "groups"/"matches" keys; lineups responses
+            # have neither, so the real object is preserved under "_raw" instead.
+            lineups = lineup_data.get("_raw") or lineup_data.get("data") or lineup_data
+            if isinstance(lineups, list):
+                lineups = lineups[0] if lineups else {}
+            if not lineups or not (lineups.get("homeTeam") or lineups.get("awayTeam")):
+                await msg.edit(content=f"⏳ Lineups not available yet for **{team_name}** (available ~30min before kickoff).")
+                return
             home_name = safe_name(found.get("homeTeam", {}), "Home")
             away_name = safe_name(found.get("awayTeam", {}), "Away")
             embed = discord.Embed(
                 title=f"📋 Lineups — {home_name} vs {away_name}",
                 color=0x1a3a2a
             )
-            for side, label in [("home", home_name), ("away", away_name)]:
-                team_lineup = lineups.get(side, {})
+            for side, label in [("homeTeam", home_name), ("awayTeam", away_name)]:
+                team_lineup = lineups.get(side, {}) or {}
                 formation = team_lineup.get("formation", "")
-                players = team_lineup.get("startingXI", [])
-                starters = [f"`{p.get('number','?')}` {p.get('name','?')}" for p in players]
+                starting_raw = team_lineup.get("initialLineup", [])
+                # initialLineup is grouped into rows (GK, DEF, MID, FWD) — flatten it
+                players = []
+                for row in starting_raw:
+                    if isinstance(row, list):
+                        players.extend(row)
+                    elif isinstance(row, dict):
+                        players.append(row)
+                starters = [f"`{p.get('shirtNumber') or p.get('number','?')}` {p.get('name','?')}" for p in players]
                 bench = team_lineup.get("substitutes", [])
-                bench_list = [f"`{p.get('number','?')}` {p.get('name','?')}" for p in bench]
-                value = f"**Formation: {formation}**\n" + "\n".join(starters)
-                if bench_list:
-                    value += f"\n\n**Bench:** {', '.join(p.get('name','?') for p in bench)}"
+                value = f"**Formation: {formation}**\n" + ("\n".join(starters) if starters else "N/A")
+                if bench:
+                    bench_names = [p.get('name','?') for p in bench]
+                    value += f"\n\n**Bench:** {', '.join(bench_names)}"
                 embed.add_field(name=label, value=value or "N/A", inline=True)
             await msg.delete()
             await message.channel.send(embed=embed)
@@ -538,28 +586,28 @@ async def on_message(message):
             for m in matches:
                 home = safe_name(m.get("homeTeam", {}), "TBD")
                 away = safe_name(m.get("awayTeam", {}), "TBD")
-                hs = m.get("homeScore")
-                aws = m.get("awayScore")
-                status_short = m.get("status", {}).get("short", "NS")
-                elapsed = m.get("status", {}).get("elapsed")
+                home_disp = f"{team_flag(home)} {home}".strip()
+                away_disp = f"{team_flag(away)} {away}".strip()
+                state = m.get("state", {}) or {}
+                description = state.get("description", "")
+                clock = state.get("clock")
+                score_current = (state.get("score") or {}).get("current")
 
-                if hs is not None and aws is not None:
-                    score = f"{hs} — {aws}"
-                else:
-                    score = "vs"
+                score = score_current if score_current else "vs"
 
-                if status_short in ("1H", "2H", "ET", "LIVE"):
-                    indicator = f"🔴 {elapsed}'" if elapsed else "🔴 LIVE"
-                elif status_short == "HT":
-                    indicator = "⏸️ Half Time"
-                elif status_short == "FT":
+                phase = get_match_phase(description)
+                if phase == "live":
+                    indicator = f"🔴 {clock}'" if clock else "🔴 LIVE"
+                elif phase == "ended":
                     indicator = "🏁 FT"
-                else:
+                elif phase == "scheduled":
                     kickoff = m.get("date", "")
                     indicator = f"⏳ {kickoff[:10] if kickoff else 'TBD'}"
+                else:
+                    indicator = description or "?"
 
                 embed.add_field(
-                    name=f"{home}  {score}  {away}",
+                    name=f"{home_disp}  {score}  {away_disp}",
                     value=indicator,
                     inline=False
                 )
