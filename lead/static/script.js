@@ -350,8 +350,10 @@ const viewPredictions = document.getElementById('view-predictions');
 btnStandings.addEventListener('click', () => {
   btnStandings.classList.add('active');
   btnPredictions.classList.remove('active');
+  btnAnalysis.classList.remove('active');
   viewStandings.style.display = 'block';
   viewPredictions.style.display = 'none';
+  viewAnalysis.style.display = 'none';
   // Restore compact layout and show card panel for standings
   document.querySelector('.content-wrap').classList.remove('wide-layout');
   document.getElementById('card-panel').style.display = '';
@@ -360,8 +362,10 @@ btnStandings.addEventListener('click', () => {
 btnPredictions.addEventListener('click', () => {
   btnPredictions.classList.add('active');
   btnStandings.classList.remove('active');
+  btnAnalysis.classList.remove('active');
   viewStandings.style.display = 'none';
   viewPredictions.style.display = 'block';
+  viewAnalysis.style.display = 'none';
   // Expand layout and hide card panel for the wide predictions matrix
   document.querySelector('.content-wrap').classList.add('wide-layout');
   document.getElementById('card-panel').style.display = 'none';
@@ -703,3 +707,248 @@ async function initTicker() {
 
 // Boot the ticker alongside the rest of the page
 initTicker();
+
+// ══════════════════════════════════════════════════════
+//  Analysis Tab Navigation, Live Charting & Shock Detector
+// ══════════════════════════════════════════════════════
+
+const btnAnalysis = document.getElementById('btn-analysis');
+const viewAnalysis = document.getElementById('view-analysis');
+let chartInstance = null;
+
+btnAnalysis.addEventListener('click', () => {
+  btnAnalysis.classList.add('active');
+  btnStandings.classList.remove('active');
+  btnPredictions.classList.remove('active');
+  
+  viewStandings.style.display = 'none';
+  viewPredictions.style.display = 'none';
+  viewAnalysis.style.display = 'block';
+
+  // Format layout for wide chart view
+  document.querySelector('.content-wrap').classList.add('wide-layout');
+  document.getElementById('card-panel').style.display = 'none';
+  
+  // Trigger loaders
+  renderLiveAnalysisChart();
+  generateMarketShocks();
+  loadAnalysisArticles();
+});
+
+// Calculate raw prediction arrays for the chart dataset
+async function fetchChartSeries() {
+  const res = await fetch(SCORING_SHEET_CSV_URL);
+  if (!res.ok) return null;
+  const csvText = await res.text();
+  const rows = csvText.split(/\r?\n/).map(row => row.split(','));
+
+  const headerRow = rows[2] || [];
+  const colToPlayer = {};
+  const playerSeries = {};
+
+  headerRow.forEach((cell, idx) => {
+    const name = cell.trim();
+    if (PLAYER_INFO[name]) {
+      colToPlayer[idx] = name;
+      playerSeries[name] = [0]; // All players start at 0 ($100 IPO)
+    }
+  });
+
+  const playerCols = Object.keys(colToPlayer).map(Number);
+
+  for (let r = 3; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row || row.length < 3) continue;
+
+    const matchNumStr = (row[1] || '').trim();
+    const matchNum = parseInt(matchNumStr, 10);
+    if (isNaN(matchNum) || matchNum < 1 || matchNum > 72) continue;
+
+    const isPlayedRow = playerCols.some(idx => {
+      const v = (row[idx] || '').trim();
+      return v === '1' || v === '0';
+    });
+    if (!isPlayedRow) continue;
+
+    playerCols.forEach(idx => {
+      const name = colToPlayer[idx];
+      const val  = (row[idx] || '').trim();
+      const lastVal = playerSeries[name][playerSeries[name].length - 1];
+      
+      if (val === '1') playerSeries[name].push(lastVal + 1);
+      else if (val === '0') playerSeries[name].push(lastVal - 1);
+      else playerSeries[name].push(lastVal); // Keep previous flatline if match skipped
+    });
+  }
+  return playerSeries;
+}
+
+// Generate the interactive Chart.js graph inside the container
+async function renderLiveAnalysisChart() {
+  const ctx = document.getElementById('analysisChart');
+  if (!ctx) return;
+
+  const series = await fetchChartSeries();
+  if (!series) return;
+
+  const playerNames = Object.keys(series);
+  const maxMatches = Math.max(...playerNames.map(name => series[name].length));
+  
+  // X-Axis Labels (0, Match 1, Match 2, ...)
+  const labels = Array.from({ length: maxMatches }, (_, i) => i === 0 ? "IPO" : `${i}`);
+
+  const colors = [
+    '#1fc269', '#f4c542', '#ef3b46', '#1E90FF', '#FF00FF', 
+    '#00FFFF', '#FFA500', '#ADFF2F', '#D2691E', '#8A2BE2'
+  ];
+
+  const datasets = playerNames.map((name, i) => {
+    // Translate score coordinates back to IPO dollar values ($100 basis)
+    const dollarValues = series[name].map(score => 100 + score);
+    return {
+      label: name,
+      data: dollarValues,
+      borderColor: colors[i % colors.length],
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      tension: 0.2, // Smoothed curves
+      pointRadius: 1,
+      pointHoverRadius: 4,
+    };
+  });
+
+  if (chartInstance) {
+    chartInstance.destroy();
+  }
+
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { color: '#f6f0df', font: { family: 'Oswald', size: 10 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ` ${ctx.dataset.label}: $${ctx.raw.toFixed(2)} (${((ctx.raw - 100)).toFixed(0)} pts)`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(41, 72, 58, 0.15)' },
+          ticks: { color: '#8aaa8e', font: { family: 'Oswald', size: 10 } }
+        },
+        y: {
+          grid: { color: 'rgba(41, 72, 58, 0.15)' },
+          ticks: { color: '#8aaa8e', font: { family: 'Oswald', size: 10 } }
+        }
+      }
+    }
+  });
+}
+
+// Scans matrices dynamically for "Upset Shocks" (Matches where only 1 or 2 players got it right)
+async function generateMarketShocks() {
+  const container = document.getElementById('shocks-list');
+  if (!container) return;
+
+  try {
+    const [predRes, outcomeMap] = await Promise.all([
+      fetch(PREDICTIONS_SHEET_CSV_URL),
+      fetchMatchOutcomes(),
+    ]);
+
+    if (!predRes.ok) return;
+    const csvText = await predRes.text();
+    const rows = csvText.split(/\r?\n/).map(row => row.split(','));
+
+    const headerRow = rows[1] || [];
+    const players = [];
+    for (let c = 4; c <= 17; c++) {
+      if (headerRow[c]) players.push(headerRow[c].trim());
+    }
+
+    const shocks = [];
+
+    for (let idx = 2; idx < rows.length; idx++) {
+      const row = rows[idx];
+      if (!row || row.length < 5) continue;
+
+      const matchNum = row[1] ? row[1].trim() : '';
+      const team1    = row[2] ? row[2].trim() : '';
+      const team2    = row[3] ? row[3].trim() : '';
+      const actualOutcome = outcomeMap[matchNum] || '';
+
+      if (matchNum && !isNaN(matchNum) && actualOutcome) {
+        const correctTraders = [];
+        
+        for (let c = 4; c <= 17; c++) {
+          const pred = row[c] ? row[c].trim().toUpperCase() : '';
+          const playerName = headerRow[c] ? headerRow[c].trim() : '';
+          if (pred === actualOutcome) {
+            correctTraders.push(playerName);
+          }
+        }
+
+        if (correctTraders.length === 1 || correctTraders.length === 2) {
+          shocks.push({
+            num: matchNum,
+            fixture: `${team1} vs ${team2}`,
+            traders: correctTraders.join(', ')
+          });
+        }
+      }
+    }
+
+    if (!shocks.length) {
+      container.innerHTML = `<span class="ticker-loading">No market anomalies or extreme upsets detected yet.</span>`;
+      return;
+    }
+
+    container.innerHTML = shocks.map(s => `
+      <div class="shock-item">
+        <span class="m-num" style="border-color: rgba(244,197,66,0.3)">M${s.num}</span>
+        <span class="shock-fixture">${escHtml(s.fixture)}</span>
+        <span class="shock-traders">Correct: ${escHtml(s.traders)} ⚡</span>
+      </div>
+    `).join('');
+
+  } catch (err) {
+    container.innerHTML = `<span class="ticker-loading">Failed to scan market shocks.</span>`;
+  }
+}
+
+// Fetch and populate analysis commentary from external JSON file
+async function loadAnalysisArticles() {
+  try {
+    const res = await fetch('/ui/analysis.json');
+    if (!res.ok) throw new Error("Could not load analysis.json");
+    const data = await res.json();
+
+    // Populate titles and text dynamically
+    document.getElementById('q1-title').innerText = data.q1.title;
+    document.getElementById('p1-text').innerText = data.q1.text;
+
+    document.getElementById('q2-title').innerText = data.q2.title;
+    document.getElementById('p2-text').innerText = data.q2.text;
+
+    document.getElementById('q3-title').innerText = data.q3.title;
+    document.getElementById('p3-text').innerText = data.q3.text;
+
+    document.getElementById('macro-title').innerText = data.macro.title;
+    document.getElementById('macro-text').innerText = data.macro.text;
+
+  } catch (err) {
+    console.warn("⚠️ Failed to load analysis articles:", err);
+    ['q1', 'q2', 'q3', 'macro'].forEach(key => {
+      const el = document.getElementById(`${key}-title`);
+      if (el) el.innerText = "Error loading commentary.";
+    });
+  }
+}

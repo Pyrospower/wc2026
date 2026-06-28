@@ -73,7 +73,7 @@ header, nav, .content-wrap, footer {
 header {
   background: var(--pitch);
   color: var(--cream);
-  padding: 1rem; /* Reduced padding from 2.5rem 1.5rem 2rem */
+  padding: 1rem;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -186,18 +186,17 @@ nav {
 /* ── Content layout ── */
 .content-wrap {
   display: flex;
-  justify-content: center; /* Centering horizontally inside the wrapper */
+  justify-content: center;
   align-items: flex-start;
   gap: 2rem;
-  max-width: 990px; /* Wider so the standings card and player badge have more room */
+  max-width: 990px;
   margin: 0 auto;
   padding: 2rem 1.25rem 4rem;
-  transition: max-width 0.25s ease-in-out; /* Smooth transition when resizing views */
+  transition: max-width 0.25s ease-in-out;
 }
 
-/* Applied dynamically when the Predictions view is active to give the wide grid more room on desktop */
 .content-wrap.wide-layout {
-  max-width: 1600px; /* Wide enough for the full 1500px predictions matrix */
+  max-width: 1600px;
   padding: 2rem 1.25rem 4rem;
 }
 
@@ -413,14 +412,14 @@ aside#card-panel {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 440px; /* Centers the list on the card cleanly */
+  max-width: 440px;
   margin: 0 auto;
 }
 
 .board-header {
   display: flex;
   align-items: center;
-  padding: 0.75rem 1rem 0.6rem; /* Adjusted horizontal padding to match rounded rows */
+  padding: 0.75rem 1rem 0.6rem;
   border-bottom: 1px solid var(--card-line);
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 10px;
@@ -428,28 +427,27 @@ aside#card-panel {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
-  margin-bottom: 8px; /* Small layout spacing below the header */
+  margin-bottom: 8px;
 }
 
 .board-body {
   display: flex;
   flex-direction: column;
-  gap: 6px; /* Adds clean structural gaps between rows instead of flat lines */
+  gap: 6px;
 }
 
 .player-row {
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 0.85rem 1rem; /* Slightly narrower padding to offset the rounded corners */
-  background: rgba(255, 255, 255, 0.015); /* Gives each row its own subtle floating card */
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.015);
   border: 1px solid rgba(255, 255, 255, 0.02);
-  border-radius: 8px; /* Rounded corners */
+  border-radius: 8px;
   transition: background 0.2s, transform 0.2s, border-color 0.2s;
   cursor: pointer;
 }
 
-/* Lift-on-hover micro-interaction with a subtle gold border glow */
 .player-row:hover { 
   background: rgba(255, 255, 255, 0.05); 
   border-color: rgba(244, 197, 66, 0.15); 
@@ -461,34 +459,14 @@ aside#card-panel {
   border-color: rgba(232, 184, 75, 0.3);
 }
 
-/* Left-Border Podium Accents (Top 3) */
-.player-row:nth-child(1) {
-  border-left: 3px solid var(--gold);
-}
-.player-row:nth-child(2) {
-  border-left: 3px solid #999; 
-}
-.player-row:nth-child(3) {
-  border-left: 3px solid #a0785a; 
-}
+.player-row:nth-child(1) { border-left: 3px solid var(--gold); }
+.player-row:nth-child(2) { border-left: 3px solid #999; }
+.player-row:nth-child(3) { border-left: 3px solid #a0785a; }
 
-/* 📏 PURE COLUMN LAYOUT: Guarantees perfect mathematical alignment */
-.cell-rank {
-  flex: 0 0 42px;
-}
+.cell-rank { flex: 0 0 42px; }
+.cell-player { flex: 1; max-width: 160px; }
+.cell-pts { flex: 0 0 60px; text-align: right; margin-left: auto; }
 
-.cell-player {
-  flex: 1;
-  max-width: 160px; /* Tighter — keeps name and pts close together */
-}
-
-.cell-pts {
-  flex: 0 0 60px;
-  text-align: right;
-  margin-left: auto; /* Aligns both 'Pts' header and score numbers perfectly on the right */
-}
-
-/* 🎨 COLUMN TYPOGRAPHY & COLORS */
 .rank {
   font-family: 'Anton', sans-serif;
   font-size: 1.15rem;
@@ -511,8 +489,8 @@ aside#card-panel {
 }
 
 .score-cell {
-  font-family: 'Oswald', sans-serif; /* Changed from 'Anton' to 'Oswald' */
-  font-variant-numeric: tabular-nums; /* Forces 1 to be the exact same width as 3, 5, 9 */
+  font-family: 'Oswald', sans-serif;
+  font-variant-numeric: tabular-nums;
   font-size: 1.4rem;
   color: var(--gold);
 }
@@ -525,7 +503,6 @@ aside#card-panel {
   line-height: 1;
 }
 
-/* ── States ── */
 .state-msg {
   text-align: center;
   padding: 2.5rem 1rem;
@@ -535,7 +512,6 @@ aside#card-panel {
 
 .state-msg .icon { font-size: 2rem; margin-bottom: 0.5rem; display: block; }
 
-/* ── Refresh ── */
 .refresh-btn {
   background: none;
   border: 1px solid rgba(200, 220, 192, 0.25);
@@ -555,17 +531,6 @@ aside#card-panel {
 }
 
 .refresh-btn:hover { color: var(--cream); border-color: rgba(200, 220, 192, 0.55); }
-
-/* ── Footer ── */
-footer {
-  text-align: center;
-  padding: 2rem 1rem 3rem;
-  font-size: 12px;
-  color: var(--muted);
-  border-top: 1px solid rgba(200, 220, 192, 0.12);
-  max-width: 980px;
-  margin: 0 auto;
-}
 
 /* ── Soccer Progress Bar Styles ── */
 .preload-progress-wrap {
@@ -634,7 +599,7 @@ footer {
 }
 
 .predictions-stage-section:first-child {
-  margin-top: 0.5rem; /* Prevents double margins at the top of the container */
+  margin-top: 0.5rem;
 }
 
 .stage-section-header {
@@ -656,9 +621,9 @@ footer {
 /* ── Predictions Flex Matrix Styling ── */
 .predictions-flex-container {
   width: 100%;
-  overflow-x: auto; /* Handles horizontal scrolling */
-  max-height: 650px; /* Sets a clean height limit for the predictions card */
-  overflow-y: auto;  /* Enables vertical scrolling INSIDE the card */
+  overflow-x: auto;
+  max-height: 650px;
+  overflow-y: auto;
   border-radius: 12px;
   border: 1px solid var(--card-line);
   background: var(--card-bg);
@@ -668,7 +633,7 @@ footer {
 .predictions-flex-table {
   display: flex;
   flex-direction: column;
-  min-width: 1560px; /* Bounding box holds all columns tightly aligned with extra player column size */
+  min-width: 1560px;
   width: 100%;
 }
 
@@ -677,24 +642,22 @@ footer {
   align-items: center;
   padding: 0.75rem 0.5rem;
   border-bottom: 2px solid var(--card-line);
-  background: #112d21; /* Solid background to prevent overlapping text */
+  background: #112d21;
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
-  
-  /* 📌 Pinned Header Configuration */
   position: sticky;
-  top: 0; /* Sticks the header to the top of the card during vertical scroll */
-  z-index: 10; /* Keeps it above the scrolling rows */
+  top: 0;
+  z-index: 10;
 }
 
 .pred-body {
   display: flex;
   flex-direction: column;
-  gap: 4px; /* Matches leaderboard rounded card gaps */
+  gap: 4px;
   padding: 6px;
 }
 
@@ -711,10 +674,9 @@ footer {
 
 .pred-row:hover:not(.stage-header-row-flex) {
   background: rgba(255, 255, 255, 0.04);
-  transform: translateX(2px); /* Interactive slide micro-animation */
+  transform: translateX(2px);
 }
 
-/* 📏 PURE COLUMN SIZES FOR PREDICTIONS GRID */
 .cell-match-info {
   flex: 0 0 280px;
   display: flex;
@@ -728,7 +690,6 @@ footer {
   z-index: 2;
 }
 
-/* Match number badge */
 .m-num {
   flex-shrink: 0;
   font-family: 'JetBrains Mono', monospace;
@@ -744,7 +705,6 @@ footer {
   letter-spacing: 0.04em;
 }
 
-/* Fixture row — teams either side of VS badge */
 .m-fixture {
   display: flex;
   align-items: center;
@@ -767,9 +727,7 @@ footer {
   min-width: 0;
 }
 
-.m-team-name:last-child {
-  text-align: right;
-}
+.m-team-name:last-child { text-align: right; }
 
 .m-vs-badge {
   flex-shrink: 0;
@@ -784,14 +742,13 @@ footer {
   padding: 2px 5px;
 }
 
-/* Slightly lighter green overlay for sticky headers */
 .pred-header .cell-match-info {
   background: #112d21;
-  z-index: 12; /* Higher z-index so the Match header stays locked on top of everything */
+  z-index: 12;
 }
 
 .cell-player-pred {
-  flex: 0 0 75px; /* Monospace player columns matching headers with comfortable padding */
+  flex: 0 0 75px;
   text-align: center;
   font-family: 'Oswald', sans-serif;
   font-size: 14px;
@@ -816,7 +773,6 @@ footer {
   margin: 0 2px;
 }
 
-/* 🏆 STAGE HEADER ROW FLEX ACCENTS */
 .stage-header-row-flex {
   display: flex;
   align-items: center;
@@ -838,7 +794,6 @@ footer {
   white-space: nowrap;
 }
 
-/* Gold line that spans the rest of the row */
 .stage-header-row-flex::after {
   content: '';
   flex: 1;
@@ -847,7 +802,6 @@ footer {
   border-radius: 1px;
 }
 
-/* 🎨 Color styling matching your spreadsheet scheme */
 .pred-home {
   background-color: rgba(31, 194, 105, 0.12) !important; 
   color: #2ecc71 !important;
@@ -863,40 +817,21 @@ footer {
   color: #f1c40f !important;
 }
 
-/* ⬜ Neutral — match not yet played, no result to compare against */
 .pred-neutral {
   background-color: rgba(200, 220, 192, 0.06) !important;
   color: var(--sage-dim) !important;
 }
 
-/* 🟢 Correct prediction — overrides the home/away/draw tint */
 .pred-correct {
   background-color: rgba(46, 204, 113, 0.22) !important;
   color: #2ecc71 !important;
   box-shadow: inset 0 0 0 1px rgba(46, 204, 113, 0.35);
 }
 
-/* 🔴 Wrong prediction — overrides the home/away/draw tint */
 .pred-wrong {
   background-color: rgba(231, 76, 60, 0.28) !important;
   color: #e74c3c !important;
   box-shadow: inset 0 0 0 1px rgba(231, 76, 60, 0.30);
-}
-
-/* ── Mobile Responsive Override ── */
-@media (max-width: 680px) {
-  .content-wrap {
-    flex-direction: column;
-  }
-
-  aside#card-panel {
-    width: 100%;
-    position: static;
-  }
-
-  .card-img { max-width: 260px; margin: 0 auto; }
-  .player-name { font-size: 14px; }
-  .score-cell { font-size: 1.2rem; }
 }
 
 /* ═══════════════════════════════════════════════
@@ -917,7 +852,6 @@ footer {
   backdrop-filter: blur(6px);
 }
 
-/* "LIVE" pill label on the left */
 .ticker-label {
   flex-shrink: 0;
   display: flex;
@@ -949,36 +883,20 @@ footer {
   50%       { opacity: 1;    transform: scale(1.2); }
 }
 
-/* Scrolling viewport — clips overflow and fades edges */
 .ticker-viewport {
   flex: 1;
   overflow: hidden;
   position: relative;
   height: 100%;
-  /* Fade edges */
-  -webkit-mask-image: linear-gradient(
-    90deg,
-    transparent 0px,
-    black 28px,
-    black calc(100% - 28px),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    90deg,
-    transparent 0px,
-    black 28px,
-    black calc(100% - 28px),
-    transparent 100%
-  );
+  -webkit-mask-image: linear-gradient(90deg, transparent 0px, black 28px, black calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0px, black 28px, black calc(100% - 28px), transparent 100%);
 }
 
-/* The scrolling track — doubled content for seamless loop */
 .ticker-track {
   display: flex;
   align-items: center;
   white-space: nowrap;
   height: 100%;
-  /* animation applied via JS once content is ready */
   will-change: transform;
 }
 
@@ -995,7 +913,6 @@ footer {
   animation-play-state: paused;
 }
 
-/* Loading placeholder */
 .ticker-loading {
   padding: 0 20px;
   font-family: 'Oswald', sans-serif;
@@ -1004,7 +921,6 @@ footer {
   opacity: 0.6;
 }
 
-/* Individual player chip */
 .ticker-item {
   display: inline-flex;
   align-items: center;
@@ -1013,7 +929,6 @@ footer {
   cursor: default;
 }
 
-/* Separator dot between items */
 .ticker-item::before {
   content: '·';
   color: rgba(41, 72, 58, 0.8);
@@ -1048,7 +963,6 @@ footer {
   text-align: right;
 }
 
-/* Stock price — $124.00 */
 .ticker-price {
   font-family: 'Oswald', sans-serif;
   font-size: 12px;
@@ -1059,10 +973,9 @@ footer {
   text-align: right;
 }
 
-/* YTD return — +24.00% */
 .ticker-ytd {
   font-family: 'Oswald', sans-serif;
-  font-size: 13px; /* Enlarged size */
+  font-size: 13px; /* Slightly larger scale */
   font-weight: 600;
   letter-spacing: 0.02em;
   min-width: 52px;
@@ -1072,27 +985,111 @@ footer {
 .ticker-ytd.down { color: #ef3b46; }
 .ticker-ytd.flat { color: rgba(200, 216, 192, 0.38); }
 
-/* Recent change — ▲+2.41% */
 .ticker-delta {
   font-family: 'Oswald', sans-serif;
-  font-size: 12px; /* Enlarged size */
+  font-size: 12px; /* Slightly larger scale */
   font-weight: 700;
   letter-spacing: 0.02em;
   white-space: nowrap;
   min-width: 52px;
-  opacity: 0.85; /* Increased opacity slightly to pop against background */
+  opacity: 0.85; /* Increased opacity to stand out */
 }
 
 .ticker-delta.up   { color: #1fc269; }
 .ticker-delta.down { color: #ef3b46; }
 .ticker-delta.flat { color: rgba(200, 216, 192, 0.38); }
 
-/* Reduce motion */
+/* ── Analysis Tab & Chart Styles ── */
+.analysis-chart-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)), var(--card-bg);
+  border: 1px solid rgba(246, 240, 223, 0.12);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 20px 70px rgba(0,0,0,0.45);
+  height: 400px;
+  position: relative;
+}
+
+.analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.analysis-card {
+  background: rgba(15, 38, 29, 0.6);
+  border: 1px solid rgba(246, 240, 223, 0.08);
+  border-radius: 10px;
+  padding: 1.25rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  transition: border-color 0.2s;
+}
+
+.analysis-card:hover {
+  border-color: rgba(244, 197, 66, 0.2);
+}
+
+.analysis-card-header {
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(41, 72, 58, 0.5);
+  padding-bottom: 4px;
+}
+
+.analysis-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  text-align: justify;
+}
+
+/* Highlighting Specific Analysis Cards */
+.shock-card {
+  border-left: 3px solid var(--gold);
+  grid-column: span 2;
+}
+
+.macro-card {
+  border-left: 3px solid #1fc269;
+}
+
+.shock-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-bottom: 1px dashed rgba(200, 216, 192, 0.1);
+  font-size: 12px;
+}
+
+.shock-fixture {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: var(--cream);
+  font-weight: 500;
+}
+
+.shock-traders {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 768px) {
+  .shock-card {
+    grid-column: span 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ticker-track.running {
-    animation: none;
-  }
-  .ticker-label::before {
-    animation: none;
-  }
+  .ticker-track.running { animation: none; }
+  .ticker-label::before { animation: none; }
 }
