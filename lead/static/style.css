@@ -414,7 +414,7 @@ aside#card-panel {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 640px; /* Centers the list on the card cleanly */
+  max-width: 440px; /* Centers the list on the card cleanly */
   margin: 0 auto;
 }
 
@@ -441,6 +441,7 @@ aside#card-panel {
 .player-row {
   display: flex;
   align-items: center;
+  width:100%;
   padding: 0.85rem 1rem; /* Slightly narrower padding to offset the rounded corners */
   background: rgba(255, 255, 255, 0.015); /* Gives each row its own subtle floating card */
   border: 1px solid rgba(255, 255, 255, 0.02);
