@@ -463,10 +463,22 @@ aside#card-panel {
 .player-row:nth-child(2) { border-left: 3px solid #999; }
 .player-row:nth-child(3) { border-left: 3px solid #a0785a; }
 
-.cell-rank { flex: 0 0 42px; }
-.cell-player { flex: 1; max-width: 160px; }
-.cell-pts { flex: 0 0 60px; text-align: right; margin-left: auto; }
+.cell-rank {
+  flex: 0 0 42px;
+}
 
+.cell-player {
+  flex: 1;
+  max-width: 160px;
+}
+
+.cell-pts {
+  flex: 0 0 60px;
+  text-align: right;
+  margin-left: auto;
+}
+
+/* 🎨 COLUMN TYPOGRAPHY & COLORS */
 .rank {
   font-family: 'Anton', sans-serif;
   font-size: 1.15rem;
@@ -834,6 +846,22 @@ aside#card-panel {
   box-shadow: inset 0 0 0 1px rgba(231, 76, 60, 0.30);
 }
 
+/* ── Mobile Responsive Override ── */
+@media (max-width: 680px) {
+  .content-wrap {
+    flex-direction: column;
+  }
+
+  aside#card-panel {
+    width: 100%;
+    position: static;
+  }
+
+  .card-img { max-width: 260px; margin: 0 auto; }
+  .player-name { font-size: 14px; }
+  .score-cell { font-size: 1.2rem; }
+}
+
 /* ═══════════════════════════════════════════════
    ── Performance Ticker Bar ──
    ═══════════════════════════════════════════════ */
@@ -975,7 +1003,7 @@ aside#card-panel {
 
 .ticker-ytd {
   font-family: 'Oswald', sans-serif;
-  font-size: 13px; /* Slightly larger scale */
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.02em;
   min-width: 52px;
@@ -987,12 +1015,12 @@ aside#card-panel {
 
 .ticker-delta {
   font-family: 'Oswald', sans-serif;
-  font-size: 12px; /* Slightly larger scale */
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
   white-space: nowrap;
   min-width: 52px;
-  opacity: 0.85; /* Increased opacity to stand out */
+  opacity: 0.85;
 }
 
 .ticker-delta.up   { color: #1fc269; }
@@ -1087,6 +1115,26 @@ aside#card-panel {
   .shock-card {
     grid-column: span 1;
   }
+}
+
+/* ── Footer ── */
+footer {
+  display: block;
+  clear: both;
+  width: 100%;
+  text-align: center;
+  padding: 3rem 1.25rem 4rem;
+  font-size: 12px;
+  color: var(--muted);
+  border-top: 1px solid rgba(200, 220, 192, 0.12);
+  max-width: 990px;
+  margin: 0 auto;
+  transition: max-width 0.25s ease-in-out;
+}
+
+/* 📌 Dynamic alignment: Automatically expands the footer when the wide-layout is active */
+.content-wrap.wide-layout + footer {
+  max-width: 1600px;
 }
 
 @media (prefers-reduced-motion: reduce) {
