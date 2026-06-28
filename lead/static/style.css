@@ -1089,21 +1089,32 @@ aside#card-panel {
 }
 
 .shock-item {
-  display: flex;
+  /* 3-column grid with equal-width sides so the centre fixture stays centred
+     regardless of how long the traders text on the right is. */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   padding: 6px 8px;
   border-bottom: 1px dashed rgba(200, 216, 192, 0.1);
   font-size: 12px;
 }
 
+.shock-item .m-num {
+  justify-self: start;
+}
+
 .shock-fixture {
+  justify-self: center;
+  text-align: center;
   font-family: 'Plus Jakarta Sans', sans-serif;
   color: var(--cream);
   font-weight: 500;
 }
 
 .shock-traders {
+  justify-self: end;
+  text-align: right;
   font-family: 'Oswald', sans-serif;
   font-size: 11px;
   color: var(--gold);
