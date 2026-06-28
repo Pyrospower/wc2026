@@ -721,6 +721,7 @@ footer {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-right:30px;
   padding-left: 0.5rem;
   position: sticky;
   left: 0;
