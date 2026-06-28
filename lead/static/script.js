@@ -559,7 +559,16 @@ async function buildTickerData() {
       const row = rows[r];
       if (!row || row.length < 3) continue;
 
-      // Skip summary/total rows
+      // 1. Verify the row is an actual match (Match column is index 1)
+      const matchNumStr = (row[1] || '').trim();
+      const matchNum = parseInt(matchNumStr, 10);
+      
+      // If the match number is blank, not a number, or outside 1-72, skip the row
+      if (isNaN(matchNum) || matchNum < 1 || matchNum > 72) {
+        continue;
+      }
+
+      // 2. Only proceed if at least one player has a graded prediction in this row
       const isPlayedRow = playerCols.some(idx => {
         const v = (row[idx] || '').trim();
         return v === '1' || v === '0';
