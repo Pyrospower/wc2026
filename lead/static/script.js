@@ -12,6 +12,9 @@ const SCORING_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1v
 // 🔮 Fully configured Google Sheets Predictions Data Stream URL:
 const PREDICTIONS_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT8fEdr0djoTa4bc8diSdwH2xSDJ4JTlNgHUWho8lQ5btMR9Joe3sXhZPP72oTSE9MBdoYKrY4DlFl9/pub?gid=793952308&single=true&output=csv';
 
+// ⚽ Matches tab CSV (for live outcome colour-coding in the Predictions matrix):
+const MATCHES_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT8fEdr0djoTa4bc8diSdwH2xSDJ4JTlNgHUWho8lQ5btMR9Joe3sXhZPP72oTSE9MBdoYKrY4DlFl9/pub?gid=1441917752&single=true&output=csv';
+
 const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
 const CARD_URL = 'https://wc2026-i9es.onrender.com/card';
 
@@ -337,14 +340,44 @@ btnPredictions.addEventListener('click', () => {
   loadPredictions();
 });
 
+// Parses the Matches CSV and returns a map of { matchNumber -> outcome }
+// Outcome column is "G" (index 6 in 0-based CSV), values are "1", "2", or "X"
+async function fetchMatchOutcomes() {
+  const outcomeMap = {}; // { '1': '1', '2': 'X', ... }
+  try {
+    const res = await fetch(MATCHES_SHEET_CSV_URL);
+    if (!res.ok) return outcomeMap;
+    const csvText = await res.text();
+    const rows = csvText.split(/\r?\n/).map(row => row.split(','));
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length < 7) continue;
+      const matchNum = row[1] ? row[1].trim() : '';
+      const outcome  = row[6] ? row[6].trim().toUpperCase() : '';
+      if (matchNum && !isNaN(matchNum) && outcome !== '') {
+        outcomeMap[matchNum] = outcome;
+      }
+    }
+  } catch (err) {
+    console.warn('⚠️ Could not fetch match outcomes:', err);
+  }
+  return outcomeMap;
+}
+
 async function loadPredictions() {
   const container = document.getElementById('predictions-container');
   container.innerHTML = `<div class="state-msg"><span class="icon">⏳</span>Loading tournament predictions...</div>`;
 
   try {
-    const res = await fetch(PREDICTIONS_SHEET_CSV_URL);
-    if (!res.ok) throw new Error("Could not fetch predictions spreadsheet");
-    const csvText = await res.text();
+    // Fetch predictions and match outcomes in parallel
+    const [predRes, outcomeMap] = await Promise.all([
+      fetch(PREDICTIONS_SHEET_CSV_URL),
+      fetchMatchOutcomes(),
+    ]);
+
+    if (!predRes.ok) throw new Error("Could not fetch predictions spreadsheet");
+    const csvText = await predRes.text();
 
     const rows = csvText.split(/\r?\n/).map(row => row.split(','));
     if (rows.length < 3) throw new Error("Spreadsheet contains empty data");
@@ -370,8 +403,8 @@ async function loadPredictions() {
       if (!row || row.length < 5) continue;
 
       const matchNum = row[1] ? row[1].trim() : '';
-      const team1 = row[2] ? row[2].trim() : '';
-      const team2 = row[3] ? row[3].trim() : '';
+      const team1    = row[2] ? row[2].trim() : '';
+      const team2    = row[3] ? row[3].trim() : '';
 
       // Detect visual stages (like "Group Phase", "Round of 32") in merged columns
       if (!matchNum && (team1.includes("Phase") || team1.includes("Round") || team1.includes("Quarter") || team1.includes("Semi") || team1.includes("Third") || team1.includes("Final"))) {
@@ -383,6 +416,8 @@ async function loadPredictions() {
 
       // Render standard prediction row
       if (matchNum && !isNaN(matchNum)) {
+        const actualOutcome = outcomeMap[matchNum] || ''; // e.g. "1", "2", "X", or "" if not played
+
         html += `<div class="pred-row">
                    <div class="cell-match-info">
                      <span class="m-num">${matchNum}</span>
@@ -392,13 +427,20 @@ async function loadPredictions() {
         // Render cell prediction values (Cols E to R -> indices 4 to 17)
         for (let c = 4; c <= 17; c++) {
           const pred = row[c] ? row[c].trim().toUpperCase() : '';
+
+          // Base colour class (home/away/draw styling used when no result yet)
           let predClass = '';
-          
           if (pred === '1') predClass = 'pred-home';
           else if (pred === '2') predClass = 'pred-away';
           else if (pred === 'X') predClass = 'pred-draw';
 
-          html += `<div class="cell-player-pred ${predClass}">${escHtml(pred)}</div>`;
+          // Result colour-coding: green if correct, red if wrong (only when match is played)
+          let resultClass = '';
+          if (actualOutcome && pred) {
+            resultClass = pred === actualOutcome ? 'pred-correct' : 'pred-wrong';
+          }
+
+          html += `<div class="cell-player-pred ${predClass} ${resultClass}">${escHtml(pred)}</div>`;
         }
         html += `</div>`;
       }
