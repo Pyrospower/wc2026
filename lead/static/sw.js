@@ -4,7 +4,7 @@ self.addEventListener('fetch', (event) => {
   const url = event.request.url;
 
   // Intercept any requests sent to your Render card generator
-  if (url.includes('wc2026-i9es.onrender.com/card')) {
+  if (url.includes('baburu-wc2026-cards.hf.space/card')) {
     event.respondWith(
       caches.open(CACHE_NAME).then((cache) => {
         return cache.match(event.request).then((cachedResponse) => {
