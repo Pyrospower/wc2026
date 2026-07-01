@@ -5,7 +5,7 @@ import discord
 from datetime import datetime, timezone
 
 TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
-LEADERBOARD_BASE_URL = "https://wc2026-leaderboard.onrender.com"
+LEADERBOARD_BASE_URL = "https://baburu-wc2026-leaderboard.hf.space"
 HIGHLIGHTLY_API_KEY = os.environ.get("HIGHLIGHTLY_API_KEY")
 HIGHLIGHTLY_BASE = "https://soccer.highlightly.net"
 
