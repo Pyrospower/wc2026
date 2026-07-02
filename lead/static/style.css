@@ -321,6 +321,37 @@ aside#card-panel {
   border-radius: 4px;
 }
 
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 1.25rem;
+  border-bottom: 1.5px solid rgba(200, 220, 192, 0.2);
+}
+
+.tab {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  margin-bottom: -1.5px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab.active {
+  color: var(--cream);
+  border-bottom-color: var(--gold);
+  font-weight: 600;
+}
+
+.tab:hover:not(.active) { color: var(--ink-soft); }
+
 /* ── Leaderboard surface card ── */
 .leaderboard-surface {
   background:
@@ -351,97 +382,25 @@ aside#card-panel {
 
 .leaderboard-surface > * { position: relative; z-index: 1; }
 
-/* ── Leaderboard Header Row ── */
+/* Tabs row: tabs on the left, refresh button on the right, all inline */
 .leaderboard-surface .tabs-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.85rem 1.25rem;
+  padding: 0 1.25rem;
   border-bottom: 1px solid var(--card-line);
+  min-height: 56px;
   gap: 1rem;
 }
 
-/* ── Board Carousel Selector ── */
-.board-selector-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-.board-selector {
+.leaderboard-surface .tabs {
+  padding: 0;
+  margin-bottom: 0;
+  border-bottom: none;
+  flex: 1;
+  align-self: stretch;
   display: flex;
   align-items: center;
-  gap: 14px;
-}
-
-.selector-arrow {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--cream);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s, transform 0.1s, border-color 0.15s;
-}
-
-.selector-arrow:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.selector-arrow:active {
-  transform: scale(0.95);
-}
-
-.arrow-icon {
-  width: 12px;
-  height: 12px;
-}
-
-.board-selector-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  min-width: 220px;
-  user-select: none;
-}
-
-.board-subtitle {
-  font-family: 'Oswald', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--gold);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  line-height: 1.2;
-}
-
-.board-selector-dots {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.board-selector-dots .dot {
-  display: inline-block;
-  width: 5px;
-  height: 3.5px;
-  border-radius: 3px;
-  background: rgba(200, 216, 192, 0.15);
-  cursor: pointer;
-  transition: background 0.25s, width 0.25s;
-}
-
-.board-selector-dots .dot.active {
-  background: var(--gold);
-  width: 12px;
 }
 
 .leaderboard-surface #board-container {
@@ -477,7 +436,6 @@ aside#card-panel {
   gap: 6px;
 }
 
-/* ── Interactive Player Row Upgrades ── */
 .player-row {
   display: flex;
   align-items: center;
@@ -486,19 +444,14 @@ aside#card-panel {
   background: rgba(255, 255, 255, 0.015);
   border: 1px solid rgba(255, 255, 255, 0.02);
   border-radius: 8px;
+  transition: background 0.2s, transform 0.2s, border-color 0.2s;
   cursor: pointer;
-  transition: background 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), 
-              transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), 
-              border-color 0.25s ease, 
-              box-shadow 0.25s ease !important;
 }
 
 .player-row:hover { 
-  background: rgba(255, 255, 255, 0.045) !important;
-  border-color: rgba(244, 197, 66, 0.25) !important;
-  transform: translateY(-2px) scale(1.01) !important;
-  box-shadow: 0 8px 24px rgba(244, 197, 66, 0.04), 
-              0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  background: rgba(255, 255, 255, 0.05); 
+  border-color: rgba(244, 197, 66, 0.15); 
+  transform: translateY(-1px); 
 }
 
 .player-row.selected { 
@@ -506,19 +459,9 @@ aside#card-panel {
   border-color: rgba(232, 184, 75, 0.3);
 }
 
-/* 🎖️ Podium Placement Highlights */
-.player-row:nth-child(1) { 
-  border-left: 3px solid var(--gold); 
-  background: linear-gradient(90deg, rgba(244, 197, 66, 0.04), rgba(255, 255, 255, 0.005)) !important;
-}
-.player-row:nth-child(2) { 
-  border-left: 3px solid #888; 
-  background: linear-gradient(90deg, rgba(136, 136, 136, 0.04), rgba(255, 255, 255, 0.005)) !important;
-}
-.player-row:nth-child(3) { 
-  border-left: 3px solid #a0785a; 
-  background: linear-gradient(90deg, rgba(160, 120, 90, 0.04), rgba(255, 255, 255, 0.005)) !important;
-}
+.player-row:nth-child(1) { border-left: 3px solid var(--gold); }
+.player-row:nth-child(2) { border-left: 3px solid #999; }
+.player-row:nth-child(3) { border-left: 3px solid #a0785a; }
 
 .cell-rank {
   flex: 0 0 42px;
@@ -919,7 +862,10 @@ aside#card-panel {
   .score-cell { font-size: 1.2rem; }
 }
 
-/* ── Performance Ticker Bar ── */
+/* ═══════════════════════════════════════════════
+   ── Performance Ticker Bar ──
+   ═══════════════════════════════════════════════ */
+
 .ticker-bar {
   position: sticky;
   top: 0;
@@ -974,9 +920,10 @@ aside#card-panel {
   mask-image: linear-gradient(90deg, transparent 0px, black 28px, black calc(100% - 28px), transparent 100%);
 }
 
+/* Update this block in style.css */
 .ticker-track {
-  display: inline-flex;
-  width: max-content;
+  display: inline-flex;  /* Changed from flex to inline-flex */
+  width: max-content;    /* Forces track to expand to its exact contents */
   align-items: center;
   white-space: nowrap;
   height: 100%;
@@ -1144,6 +1091,8 @@ aside#card-panel {
 }
 
 .shock-item {
+  /* 3-column grid with equal-width sides so the centre fixture stays centred
+     regardless of how long the traders text on the right is. */
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
@@ -1196,6 +1145,7 @@ footer {
   transition: max-width 0.25s ease-in-out;
 }
 
+/* 📌 Dynamic alignment: Automatically expands the footer when the wide-layout is active */
 .content-wrap.wide-layout + footer {
   max-width: 1600px;
 }
@@ -1204,7 +1154,6 @@ footer {
   .ticker-track.running { animation: none; }
   .ticker-label::before { animation: none; }
 }
-
 /* ── Article Cards (Analysis Grid) ── */
 .analysis-grid {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -1234,7 +1183,7 @@ footer {
   position: relative;
   height: 170px;
   background:
-    linear-gradient(160deg, rgba(0,0,0,0.1) 0%, transparent 60%),
+    linear-gradient(160deg, rgba(0,0,0,0.15) 0%, transparent 60%),
     linear-gradient(180deg, rgba(15, 38, 29, 0.4) 0%, rgba(7, 19, 15, 0.85) 100%);
   background-color: var(--card-bg);
   display: flex;
@@ -1243,6 +1192,7 @@ footer {
   overflow: hidden;
 }
 
+/* Subtle grid pattern on thumbnail */
 .article-thumb::before {
   content: '';
   position: absolute;
@@ -1254,6 +1204,7 @@ footer {
   pointer-events: none;
 }
 
+/* Glowing accent top border */
 .article-thumb::after {
   content: '';
   position: absolute;
@@ -1589,43 +1540,4 @@ footer {
 
 .article-permalink-copy:hover {
   background: rgba(244, 197, 66, 0.12);
-}
-
-/* ── Article Responsive Table Styling ── */
-.article-table-wrap {
-  width: 100%;
-  overflow-x: auto;
-  margin: 1.5rem 0;
-  border-radius: 8px;
-  border: 1px solid rgba(246, 240, 223, 0.12);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-}
-
-.article-reader-body table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-  color: var(--ink-soft);
-  background: rgba(15, 38, 29, 0.4);
-}
-
-.article-reader-body th {
-  background: rgba(15, 38, 29, 0.8);
-  color: var(--gold);
-  font-family: 'Oswald', sans-serif;
-  text-transform: uppercase;
-  font-weight: 600;
-  text-align: left;
-  padding: 10px 14px;
-  border-bottom: 2px solid rgba(246, 240, 223, 0.15);
-  letter-spacing: 0.05em;
-}
-
-.article-reader-body td {
-  padding: 10px 14px;
-  border-bottom: 1px solid rgba(246, 240, 223, 0.08);
-}
-
-.article-reader-body tr:hover {
-  background: rgba(255, 255, 255, 0.02);
 }
