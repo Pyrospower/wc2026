@@ -53,7 +53,7 @@ const TEAM_FLAGS = {
   'Portugal': '🇵🇹', 'Congo DR': '🇨🇩', 'England': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'Croatia': '🇭🇷',
   'Ghana': '🇬🇭', 'Panama': '🇵🇦', 'Uzbekistan': '🇺🇿', 'Colombia': '🇨🇴',
   'Denmark': '🇩🇰', 'Serbia': '🇷🇸', 'Poland': '🇵🇱', 'Nigeria': '🇳🇬',
-  'Cameroon': '🇨🇲', 'Peru': '🇵🇪', 'Wales': '🏴\u00db\u00ad\u00db\u00ad\u00db\u0097',
+  'Cameroon': '🇨🇲', 'Peru': '🇵🇪', 'Wales': '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
 };
 
 function getFlag(team) {
@@ -544,6 +544,16 @@ if ('serviceWorker' in navigator) {
       .catch(err => console.warn('Service Worker registration failed:', err));
   });
 }
+
+// 🎬 Initialization Pipeline
+updateBoardSelector(); // 💡 Set up board, dots, and title successfully on load
+fetchLiveWinRates();
+
+const wakePingPromise = fetch('https://wc2026-i9es.onrender.com/', { mode: 'no-cors' }).catch(() => {});
+
+Promise.all([wakePingPromise]).then(() => {
+  triggerBackgroundPreload();
+});
 
 async function fetchChartSeries() {
   const res = await fetchFresh(SCORING_SHEET_CSV_URL);

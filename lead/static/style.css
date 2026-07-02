@@ -558,9 +558,7 @@ aside#card-panel {
 }
 
 .score-cell {
-  font-family: 'JetBrains Mono', monospace !important;
-  font-weight: 500 !important;
-  letter-spacing: -0.02em !important;
+  font-family: 'Oswald', sans-serif;
   font-variant-numeric: tabular-nums;
   font-size: 1.4rem;
   color: var(--gold);
