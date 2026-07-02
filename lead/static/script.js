@@ -546,7 +546,7 @@ if ('serviceWorker' in navigator) {
 }
 
 // 🎬 Initialization Pipeline
-updateBoardSelector(); // 💡 Set up board, dots, and title successfully on load
+updateBoardSelector(); // 💡 Set up board selection text and dots on initial load
 fetchLiveWinRates();
 
 const wakePingPromise = fetch('https://wc2026-i9es.onrender.com/', { mode: 'no-cors' }).catch(() => {});
