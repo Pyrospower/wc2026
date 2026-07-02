@@ -305,53 +305,107 @@ async function triggerBackgroundPreload() {
   await Promise.all(Array.from({ length: workerCount }, worker));
 }
 
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    activeBoard = tab.dataset.board;
-    loadBoard(activeBoard);
-  });
-});
+// ── Board Carousel Selector Logic ──
+const BOARDS = [
+  { key: 'lead', subtitle: 'GENERAL CLASSIFICATION' },
+  { key: 'm1', subtitle: 'MATCHDAY 1' },
+  { key: 'm2', subtitle: 'MATCHDAY 2' },
+  { key: 'm3', subtitle: 'MATCHDAY 3' },
+  { key: 'm4', subtitle: 'MATCHDAY 4' }
+];
+let currentBoardIndex = 0;
 
-// 🛠️ Service Worker Registration 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('Service Worker registered successfully:', reg.scope))
-      .catch(err => console.warn('Service Worker registration failed:', err));
+function updateBoardSelector() {
+  const board = BOARDS[currentBoardIndex];
+  activeBoard = board.key;
+  
+  // Update subtitle text only
+  document.getElementById('board-subtitle').innerText = board.subtitle;
+  
+  // Update active dot visual class
+  document.querySelectorAll('#board-selector-dots .dot').forEach((dot, idx) => {
+    dot.classList.toggle('active', idx === currentBoardIndex);
+  });
+  
+  // Load board scoring data
+  loadBoard(activeBoard);
+}
+
+const prevBtn = document.getElementById('prev-board-btn');
+const nextBtn = document.getElementById('next-board-btn');
+
+if (prevBtn) {
+  prevBtn.addEventListener('click', () => {
+    currentBoardIndex = (currentBoardIndex - 1 + BOARDS.length) % BOARDS.length;
+    updateBoardSelector();
   });
 }
 
-// ── Predictions Tab Navigation and Flex Parser Logic ──
+if (nextBtn) {
+  nextBtn.addEventListener('click', () => {
+    currentBoardIndex = (currentBoardIndex + 1) % BOARDS.length;
+    updateBoardSelector();
+  });
+}
 
+document.querySelectorAll('#board-selector-dots .dot').forEach(dot => {
+  dot.addEventListener('click', () => {
+    currentBoardIndex = parseInt(dot.dataset.index, 10);
+    updateBoardSelector();
+  });
+});
+
+// ── Navigation Menu ──
 const btnStandings = document.getElementById('btn-standings');
 const btnPredictions = document.getElementById('btn-predictions');
+const btnAnalysis = document.getElementById('btn-analysis');
+
 const viewStandings = document.getElementById('view-standings');
 const viewPredictions = document.getElementById('view-predictions');
+const viewAnalysis = document.getElementById('view-analysis');
 
-btnStandings.addEventListener('click', () => {
-  btnStandings.classList.add('active');
-  btnPredictions.classList.remove('active');
-  btnAnalysis.classList.remove('active');
-  viewStandings.style.display = 'block';
-  viewPredictions.style.display = 'none';
-  viewAnalysis.style.display = 'none';
-  document.querySelector('.content-wrap').classList.remove('wide-layout');
-  document.getElementById('card-panel').style.display = '';
-});
+if (btnStandings) {
+  btnStandings.addEventListener('click', () => {
+    btnStandings.classList.add('active');
+    btnPredictions.classList.remove('active');
+    btnAnalysis.classList.remove('active');
+    viewStandings.style.display = 'block';
+    viewPredictions.style.display = 'none';
+    viewAnalysis.style.display = 'none';
+    document.querySelector('.content-wrap').classList.remove('wide-layout');
+    document.getElementById('card-panel').style.display = '';
+  });
+}
 
-btnPredictions.addEventListener('click', () => {
-  btnPredictions.classList.add('active');
-  btnStandings.classList.remove('active');
-  btnAnalysis.classList.remove('active');
-  viewStandings.style.display = 'none';
-  viewPredictions.style.display = 'block';
-  viewAnalysis.style.display = 'none';
-  document.querySelector('.content-wrap').classList.add('wide-layout');
-  document.getElementById('card-panel').style.display = 'none';
-  loadPredictions();
-});
+if (btnPredictions) {
+  btnPredictions.addEventListener('click', () => {
+    btnPredictions.classList.add('active');
+    btnStandings.classList.remove('active');
+    btnAnalysis.classList.remove('active');
+    viewStandings.style.display = 'none';
+    viewPredictions.style.display = 'block';
+    viewAnalysis.style.display = 'none';
+    document.querySelector('.content-wrap').classList.add('wide-layout');
+    document.getElementById('card-panel').style.display = 'none';
+    loadPredictions();
+  });
+}
+
+if (btnAnalysis) {
+  btnAnalysis.addEventListener('click', () => {
+    btnAnalysis.classList.add('active');
+    btnStandings.classList.remove('active');
+    btnPredictions.classList.remove('active');
+    viewStandings.style.display = 'none';
+    viewPredictions.style.display = 'none';
+    viewAnalysis.style.display = 'block';
+    document.querySelector('.content-wrap').classList.add('wide-layout');
+    document.getElementById('card-panel').style.display = 'none';
+    renderLiveAnalysisChart();
+    generateMarketShocks();
+    loadAnalysisArticles();
+  });
+}
 
 // Parses the Matches CSV and returns a map of { matchNumber -> outcome }
 async function fetchMatchOutcomes() {
@@ -482,46 +536,23 @@ async function loadPredictions() {
   }
 }
 
-// ══════════════════════════════════════════════════════
-//  Performance Ticker Bar now lives in ticker.js
-//  (shared/loaded on every page). This file just calls the
-//  global window.initTicker() that ticker.js exposes,
-//  from refreshActiveView() further down, on refresh clicks.
-// ══════════════════════════════════════════════════════
+// ── Service Worker Registration ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('Service Worker registered successfully:', reg.scope))
+      .catch(err => console.warn('Service Worker registration failed:', err));
+  });
+}
 
 // 🎬 Initialization Pipeline
-const leadBoardPromise = loadBoard('lead');
+updateBoardSelector(); // 💡 Set up board selection text and dots on initial load
 fetchLiveWinRates();
 
 const wakePingPromise = fetch('https://wc2026-i9es.onrender.com/', { mode: 'no-cors' }).catch(() => {});
 
-Promise.all([leadBoardPromise, wakePingPromise]).then(() => {
+Promise.all([wakePingPromise]).then(() => {
   triggerBackgroundPreload();
-});
-
-// ══════════════════════════════════════════════════════
-//  Analysis Tab Navigation, Live Charting & Shock Detector
-// ══════════════════════════════════════════════════════
-
-const btnAnalysis = document.getElementById('btn-analysis');
-const viewAnalysis = document.getElementById('view-analysis');
-let chartInstance = null;
-
-btnAnalysis.addEventListener('click', () => {
-  btnAnalysis.classList.add('active');
-  btnStandings.classList.remove('active');
-  btnPredictions.classList.remove('active');
-  
-  viewStandings.style.display = 'none';
-  viewPredictions.style.display = 'none';
-  viewAnalysis.style.display = 'block';
-
-  document.querySelector('.content-wrap').classList.add('wide-layout');
-  document.getElementById('card-panel').style.display = 'none';
-  
-  renderLiveAnalysisChart();
-  generateMarketShocks();
-  loadAnalysisArticles();
 });
 
 async function fetchChartSeries() {
@@ -709,7 +740,7 @@ async function generateMarketShocks() {
   }
 }
 
-// 🌐 Article visual identity — derived dynamically from analysis.json, no hardcoded list needed
+// 🌐 Article visual identity — derived dynamically from analysis.json
 const ARTICLE_COLOR_PALETTE = [
   { color: '#f4c542', accent: '#c99b35' }, // gold
   { color: '#8acdff', accent: '#5faae0' }, // blue
@@ -726,12 +757,9 @@ function hashKeyToIndex(key, mod) {
 }
 
 function getArticleMeta(key, article) {
-  // Icon: leading emoji from the title, falling back to a generic icon
   const emojiMatch = article.title.match(/^[\p{Emoji}\u200d\ufe0f]+/u);
   const icon = emojiMatch ? emojiMatch[0].trim() : '📋';
-  // Category: straight from the JSON, falling back to a generic label
   const category = (article.category || 'ANALYSIS').toUpperCase();
-  // Color: stable pseudo-random pick per article key, so it's consistent across loads
   const palette = ARTICLE_COLOR_PALETTE[hashKeyToIndex(key, ARTICLE_COLOR_PALETTE.length)];
   return { category, icon, color: palette.color, accent: palette.accent };
 }
@@ -741,13 +769,10 @@ function buildArticleThumbnail(key, article, meta) {
   const accent = meta.accent;
   const icon = meta.icon;
 
-  // If the article supplies a real thumbnail image, use it as the background art —
-  // light overlay just for contrast against the accent bar, photo stays clear throughout
   const bgStyle = article.thumbnail
     ? `background-image:linear-gradient(180deg, rgba(7,19,15,0.02) 0%, rgba(7,19,15,0.08) 100%), url('${escHtml(article.thumbnail)}');background-size:cover;background-position:center 22%;`
     : '';
 
-  // Skip the emoji icon when there's an actual photo — the image carries the visual weight instead
   const iconHtml = article.thumbnail ? '' : `<div class="article-thumb-icon">${icon}</div>`;
 
   return `
@@ -758,7 +783,6 @@ function buildArticleThumbnail(key, article, meta) {
 }
 
 function getArticlePreview(text) {
-  // First ~120 chars of the body text, cut at a word boundary
   const plain = text.replace(/\n/g, ' ').trim();
   return plain.length > 130 ? plain.slice(0, 127).replace(/\s\S+$/, '') + '…' : plain;
 }
@@ -778,11 +802,9 @@ async function loadAnalysisArticles() {
     if (!articlesRes.ok) throw new Error("Could not load analysis.json");
     const data = await articlesRes.json();
 
-    // Reset grid while preserving the fixed Market Shocks card at the top
     grid.innerHTML = '';
     if (shocksContainer) grid.appendChild(shocksContainer);
 
-    // Render each article as a clickable card thumbnail
     Object.keys(data).forEach(key => {
       const article = data[key];
       const meta = getArticleMeta(key, article);
@@ -792,7 +814,6 @@ async function loadAnalysisArticles() {
       const card = document.createElement('a');
       card.className = 'article-card';
       card.href = href;
-      // Open in same tab so back button works
       card.innerHTML = `
         ${buildArticleThumbnail(key, article, meta)}
         <div class="article-card-body">
@@ -817,7 +838,9 @@ async function loadAnalysisArticles() {
 // 🌐 Consolidated function to handle reloading all active views seamlessly
 async function refreshActiveView() {
   await fetchLiveWinRates();
-  await initTicker();
+  if (window.initTicker) {
+    await window.initTicker();
+  }
 
   if (btnStandings.classList.contains('active')) {
     await loadBoard(activeBoard);
