@@ -305,14 +305,53 @@ async function triggerBackgroundPreload() {
   await Promise.all(Array.from({ length: workerCount }, worker));
 }
 
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    activeBoard = tab.dataset.board;
-    loadBoard(activeBoard);
+// ── Leaderboard carousel nav (arrows + dots) ──
+const BOARD_ORDER = ['lead', 'm1', 'm2', 'm3', 'm4'];
+const BOARD_LABELS = {
+  lead: 'General Classification',
+  m1:   'Matchday 1',
+  m2:   'Matchday 2',
+  m3:   'Matchday 3',
+  m4:   'Matchday 4',
+};
+
+function updateBoardNav() {
+  const label = document.getElementById('board-nav-label');
+  if (label) label.textContent = BOARD_LABELS[activeBoard] || '';
+  document.querySelectorAll('.board-dot').forEach(dot => {
+    dot.classList.toggle('active', dot.dataset.board === activeBoard);
   });
+}
+
+function goToBoard(boardKey) {
+  if (boardKey === activeBoard) return;
+  activeBoard = boardKey;
+  updateBoardNav();
+  loadBoard(activeBoard);
+}
+
+document.querySelectorAll('.board-dot').forEach(dot => {
+  dot.addEventListener('click', () => goToBoard(dot.dataset.board));
 });
+
+const boardPrevBtn = document.getElementById('board-prev');
+const boardNextBtn = document.getElementById('board-next');
+
+if (boardPrevBtn) {
+  boardPrevBtn.addEventListener('click', () => {
+    const idx = BOARD_ORDER.indexOf(activeBoard);
+    goToBoard(BOARD_ORDER[(idx - 1 + BOARD_ORDER.length) % BOARD_ORDER.length]);
+  });
+}
+
+if (boardNextBtn) {
+  boardNextBtn.addEventListener('click', () => {
+    const idx = BOARD_ORDER.indexOf(activeBoard);
+    goToBoard(BOARD_ORDER[(idx + 1) % BOARD_ORDER.length]);
+  });
+}
+
+updateBoardNav();
 
 // 🛠️ Service Worker Registration 
 if ('serviceWorker' in navigator) {

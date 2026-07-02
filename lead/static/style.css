@@ -407,6 +407,85 @@ aside#card-panel {
   padding: 0.75rem 0 0.5rem;
 }
 
+/* ── Board carousel nav (arrows + label + dots) ── */
+.board-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex: 1;
+  align-self: stretch;
+}
+
+.board-nav-arrow {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(200, 220, 192, 0.25);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.board-nav-arrow:hover {
+  background: var(--pitch);
+  color: var(--cream);
+  border-color: var(--pitch);
+}
+
+.board-nav-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.board-nav-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.board-nav-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.board-dot {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  background: rgba(200, 220, 192, 0.25);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s, width 0.15s;
+}
+
+.board-dot:hover { background: rgba(200, 220, 192, 0.5); }
+
+.board-dot.active {
+  background: var(--gold);
+  width: 16px;
+  border-radius: 3px;
+}
+
 /* ── Leaderboard Flex Layout ── */
 .leaderboard-flex {
   display: flex;

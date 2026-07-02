@@ -46,18 +46,25 @@
       <!-- View 1: Standings (Active by default) -->
       <div id="view-standings">
         <div class="section-label">
-          <h2>General Classification</h2>
+          <h2>Leaderboards</h2>
           <span class="badge">Live</span>
         </div>
 
         <div class="leaderboard-surface">
           <div class="tabs-row">
-            <div class="tabs" role="tablist">
-              <button class="tab active" data-board="lead" role="tab">Overall</button>
-              <button class="tab" data-board="m1" role="tab">Matchday 1</button>
-              <button class="tab" data-board="m2" role="tab">Matchday 2</button>
-              <button class="tab" data-board="m3" role="tab">Matchday 3</button>
-              <button class="tab" data-board="m4" role="tab">Matchday 4</button>
+            <div class="board-nav" role="tablist" aria-label="Select leaderboard">
+              <button class="board-nav-arrow" id="board-prev" aria-label="Previous leaderboard">‹</button>
+              <div class="board-nav-center">
+                <span class="board-nav-label" id="board-nav-label">General Classification</span>
+                <div class="board-nav-dots" id="board-nav-dots">
+                  <button class="board-dot active" data-board="lead" role="tab" aria-label="Overall"></button>
+                  <button class="board-dot" data-board="m1" role="tab" aria-label="Matchday 1"></button>
+                  <button class="board-dot" data-board="m2" role="tab" aria-label="Matchday 2"></button>
+                  <button class="board-dot" data-board="m3" role="tab" aria-label="Matchday 3"></button>
+                  <button class="board-dot" data-board="m4" role="tab" aria-label="Matchday 4"></button>
+                </div>
+              </div>
+              <button class="board-nav-arrow" id="board-next" aria-label="Next leaderboard">›</button>
             </div>
             <button class="refresh-btn" id="refresh-btn">
               <span id="refresh-icon">↻</span> Refresh
