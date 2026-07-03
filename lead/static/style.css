@@ -445,7 +445,8 @@ aside#card-panel {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  min-width: 0;
+  flex-shrink: 0;
+  width: 215px;
 }
 
 .board-nav-label {
@@ -458,7 +459,8 @@ aside#card-panel {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 220px;
+  width: 100%;
+  text-align: center;
 }
 
 .board-nav-dots {
@@ -929,6 +931,14 @@ aside#card-panel {
 @media (max-width: 680px) {
   .content-wrap {
     flex-direction: column;
+  }
+
+  .board-nav-center {
+    width: 165px;
+  }
+
+  .board-nav-label {
+    font-size: 11px;
   }
 
   aside#card-panel {

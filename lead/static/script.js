@@ -319,6 +319,29 @@ async function triggerBackgroundPreload() {
   await Promise.all(Array.from({ length: workerCount }, worker));
 }
 
+// Quietly fetches a board and drops it into boardCache without touching
+// the DOM. Used to warm up every tab in the background so that when the
+// person actually clicks over to it, loadBoard() finds it already cached
+// and renders instantly instead of showing a loading spinner.
+async function preloadBoardData(boardKey) {
+  if (boardCache[boardKey]) return;
+  try {
+    const freshEndpointUrl = `${ENDPOINTS[boardKey]}?_cb=${Date.now()}`;
+    const res = await fetch(freshEndpointUrl);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.ok) return;
+    boardCache[boardKey] = data.players;
+  } catch (err) {
+    // Silent — this is a background warm-up, not a user-facing load.
+  }
+}
+
+async function preloadAllBoards() {
+  const others = BOARD_ORDER.filter(b => b !== activeBoard);
+  await Promise.all(others.map(preloadBoardData));
+}
+
 // ── Leaderboard carousel nav (arrows + dots) ──
 const BOARD_ORDER = ['lead', 'm1', 'm2', 'm3', 'm4'];
 const BOARD_LABELS = {
@@ -550,6 +573,7 @@ const wakePingPromise = fetch('https://wc2026-i9es.onrender.com/', { mode: 'no-c
 
 Promise.all([leadBoardPromise, wakePingPromise]).then(() => {
   triggerBackgroundPreload();
+  preloadAllBoards();
 });
 
 // ══════════════════════════════════════════════════════
