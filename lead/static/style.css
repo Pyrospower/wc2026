@@ -362,6 +362,8 @@ aside#card-panel {
   box-shadow: 0 20px 70px rgba(0,0,0,0.45);
   overflow: hidden;
   position: relative;
+  max-width: 500px;
+  margin: 0 auto;
 }
 
 .leaderboard-surface::before {
@@ -493,14 +495,14 @@ aside#card-panel {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 440px;
+  max-width: 380px;
   margin: 0 auto;
 }
 
 .board-header {
   display: flex;
   align-items: center;
-  padding: 0.75rem 1rem 0.6rem;
+  padding: 0.6rem 0.9rem 0.5rem;
   border-bottom: 1px solid var(--card-line);
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 10px;
@@ -508,23 +510,23 @@ aside#card-panel {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .board-body {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .player-row {
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 0.85rem 1rem;
+  padding: 0.6rem 0.9rem;
   background: rgba(255, 255, 255, 0.015);
   border: 1px solid rgba(255, 255, 255, 0.02);
-  border-radius: 8px;
+  border-radius: 7px;
   transition: background 0.2s, transform 0.2s, border-color 0.2s;
   cursor: pointer;
 }
@@ -545,7 +547,7 @@ aside#card-panel {
 .player-row:nth-child(3) { border-left: 3px solid #a0785a; }
 
 .cell-rank {
-  flex: 0 0 42px;
+  flex: 0 0 34px;
 }
 
 .cell-player {
@@ -554,7 +556,7 @@ aside#card-panel {
 }
 
 .cell-pts {
-  flex: 0 0 60px;
+  flex: 0 0 50px;
   text-align: right;
   margin-left: auto;
 }
@@ -562,7 +564,7 @@ aside#card-panel {
 /* 🎨 COLUMN TYPOGRAPHY & COLORS */
 .rank {
   font-family: 'Anton', sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   color: var(--muted);
   letter-spacing: 0.05em;
 }
@@ -573,7 +575,7 @@ aside#card-panel {
 
 .player-name {
   font-family: 'Oswald', sans-serif;
-  font-size: 20px;
+  font-size: 17px;
   letter-spacing: 0;
   text-transform: uppercase;
   color: var(--cream);
@@ -584,7 +586,7 @@ aside#card-panel {
 .score-cell {
   font-family: 'Oswald', sans-serif;
   font-variant-numeric: tabular-nums;
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   color: var(--gold);
 }
 
@@ -947,8 +949,8 @@ aside#card-panel {
   }
 
   .card-img { max-width: 260px; margin: 0 auto; }
-  .player-name { font-size: 14px; }
-  .score-cell { font-size: 1.2rem; }
+  .player-name { font-size: 13px; }
+  .score-cell { font-size: 1.05rem; }
 }
 
 /* ═══════════════════════════════════════════════
