@@ -192,7 +192,7 @@ function renderTable(players) {
     const medal = rank <= 3 ? (MEDALS[rank] || '') : '';
     const isSelected = p.name === selectedPlayer ? ' selected' : '';
     return `
-      <div class="player-row${isSelected}" data-player="${escHtml(p.name)}">
+      <div class="player-row${rankClass}${isSelected}" data-player="${escHtml(p.name)}">
         <div class="cell-rank rank${rankClass}">${rank}</div>
         <div class="cell-player player-name">${escHtml(p.name)}${medal ? `<span class="medal-inline">${medal}</span>` : ''}</div>
         <div class="cell-pts score-cell">${p.score}</div>

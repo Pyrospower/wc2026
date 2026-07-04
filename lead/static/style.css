@@ -549,9 +549,9 @@ aside#card-panel {
   border-color: rgba(232, 184, 75, 0.3);
 }
 
-.player-row:nth-child(1) { border-left: 3px solid var(--gold); }
-.player-row:nth-child(2) { border-left: 3px solid #999; }
-.player-row:nth-child(3) { border-left: 3px solid #a0785a; }
+.player-row.rank-1 { border-left: 3px solid var(--gold); }
+.player-row.rank-2 { border-left: 3px solid #999; }
+.player-row.rank-3 { border-left: 3px solid #a0785a; }
 
 .cell-rank {
   flex: 0 0 40px;
