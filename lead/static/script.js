@@ -176,21 +176,27 @@ function renderTable(players) {
     return `<div class="state-msg"><span class="icon">📭</span>No scores yet.</div>`;
   }
 
-  // Compute "competition ranking" (1224 style): players tied on score share
-  // the same rank and medal, and the next distinct score skips ahead by the
-  // number of players tied above it (e.g. two 2nd places → next is 4th... but
-  // for medals specifically, we only care about golds/silvers/bronzes).
+  // Compute "competition ranking" (1224 style) for the rank NUMBER shown:
+  // players tied on score share the same rank, and the next distinct score
+  // jumps by the number of players tied above it (e.g. two 2nd places → next is 4th).
+  //
+  // Medals are handled separately using "dense ranking" by score TIER: the
+  // highest distinct score is gold, the next distinct score is silver, the
+  // one after that is bronze — regardless of how many players are tied in
+  // each tier. This way a tie for 1st never causes silver to disappear.
   let lastScore = null;
   let lastRank = 0;
+  let medalTier = 0;
 
   const rows = players.map((p, i) => {
     if (p.score !== lastScore) {
       lastRank = i + 1;
       lastScore = p.score;
+      medalTier++;
     }
     const rank = lastRank;
     const rankClass = rank <= 3 ? ` rank-${rank}` : '';
-    const medal = MEDALS[rank] || '';
+    const medal = medalTier <= 3 ? (MEDALS[medalTier] || '') : '';
     const isSelected = p.name === selectedPlayer ? ' selected' : '';
     return `
       <div class="player-row${isSelected}" data-player="${escHtml(p.name)}">
