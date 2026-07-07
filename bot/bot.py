@@ -528,6 +528,7 @@ async def on_message(message):
             if not matches:
                 await msg.edit(content="ℹ️ No World Cup matches today.")
                 return
+            matches.sort(key=lambda m: (kickoff_unix(m.get("date")) is None, kickoff_unix(m.get("date")) or 0))
             embed = discord.Embed(title=f"⚽ World Cup 2026 — {today}", color=0x1a3a2a)
             for m in matches:
                 home = safe_name(m.get("homeTeam", {}), "TBD")
